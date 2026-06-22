@@ -14,12 +14,15 @@ case "${CLANG_VARIANT}" in
     ./antman -S
     ./antman --patch=glibc
     CLANG_BIN="${HOME}/toolchains/neutron-clang/bin"
+    COMPILER_STRING="Neutron Clang 23.0.0"
     ;;
   cirrus)
     curl -Lo ~/get_clang.sh \
       https://raw.githubusercontent.com/greenforce-project/greenforce_clang/refs/heads/main/get_clang.sh
     bash ~/get_clang.sh
     CLANG_BIN="${GITHUB_WORKSPACE}/greenforce-clang/bin"
+    GF_VERSION=$("${CLANG_BIN}/clang" --version | head -n1 | grep -oP 'clang version \K[0-9.]+' || echo "23.0.0")
+    COMPILER_STRING="Cirrus Clang ${GF_VERSION}"
     ;;
   *)
     echo "[!] Unknown clang variant: ${CLANG_VARIANT}"
@@ -28,5 +31,9 @@ case "${CLANG_VARIANT}" in
 esac
 
 echo "CLANG_PATH=${CLANG_BIN}" >> "${GITHUB_ENV}"
+echo "${CLANG_BIN}" >> "${GITHUB_PATH}"
+echo "KBUILD_COMPILER_STRING=${COMPILER_STRING}" >> "${GITHUB_ENV}"
+echo "KBUILD_BUILD_USER=adennnqt" >> "${GITHUB_ENV}"
+echo "KBUILD_BUILD_HOST=DumpC2J" >> "${GITHUB_ENV}"
 echo "[+] Clang ready: ${CLANG_BIN}"
 ${CLANG_BIN}/clang --version
