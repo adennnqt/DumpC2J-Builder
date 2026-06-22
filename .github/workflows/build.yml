@@ -1,0 +1,95 @@
+name: DumpC2J Kernel Builder
+
+on:
+  workflow_dispatch:
+    inputs:
+      KERNEL_SOURCE:
+        description: 'Kernel source repo'
+        default: 'https://github.com/ndnsa95-max/DumpC2J-Kernel'
+        required: true
+      KERNEL_BRANCH:
+        description: 'Kernel source branch'
+        default: 'main'
+        required: true
+      CLANG_VARIANT:
+        description: 'Clang toolchain'
+        required: true
+        default: 'neutron'
+        type: choice
+        options:
+          - neutron
+          - weebx
+          - zycromerz
+          - greenforce
+          - aosp
+      KERNEL_VERSION_SPOOF:
+        description: 'Spoof kernel version (kosongkan = pakai upstream)'
+        default: ''
+        required: false
+      EXTRA_PATCHES:
+        description: 'Patches to apply (comma-separated, dari folder patches/)'
+        default: ''
+        required: false
+      ANYKERNEL_REPO:
+        description: 'AnyKernel3 repo'
+        default: 'https://github.com/osm0sis/AnyKernel3'
+        required: false
+      ANYKERNEL_BRANCH:
+        description: 'AnyKernel3 branch'
+        default: 'master'
+        required: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Builder
+        uses: actions/checkout@v4
+
+      - name: Setup build environment
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            bc bison build-essential ca-certificates cpio curl \
+            flex git libelf-dev libssl-dev lz4 python3 unzip zip
+
+      - name: Clone kernel source
+        run: |
+          git clone --depth=1 \
+            --branch ${{ github.event.inputs.KERNEL_BRANCH }} \
+            ${{ github.event.inputs.KERNEL_SOURCE }} \
+            kernel-source
+
+      - name: Setup Clang
+        run: |
+          bash scripts/setup_clang.sh ${{ github.event.inputs.CLANG_VARIANT }}
+
+      - name: Apply patches
+        if: ${{ github.event.inputs.EXTRA_PATCHES != '' }}
+        run: |
+          bash scripts/apply_patches.sh \
+            "${{ github.event.inputs.EXTRA_PATCHES }}" \
+            kernel-source
+
+      - name: Build kernel
+        run: |
+          bash scripts/build.sh \
+            "${{ github.event.inputs.KERNEL_VERSION_SPOOF }}"
+
+      - name: Package AnyKernel3
+        run: |
+          git clone --depth=1 \
+            --branch ${{ github.event.inputs.ANYKERNEL_BRANCH }} \
+            ${{ github.event.inputs.ANYKERNEL_REPO }} \
+            anykernel
+          cp kernel-source/out/arch/arm64/boot/Image anykernel/
+          cd anykernel
+          zip -r9 ../DumpC2J-Kernel-${{ github.run_number }}.zip . \
+            -x '*.git*' -x 'LICENSE' -x 'README.md'
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DumpC2J-Kernel-${{ github.run_number }}
+          path: DumpC2J-Kernel-${{ github.run_number }}.zip
+          retention-days: 7
