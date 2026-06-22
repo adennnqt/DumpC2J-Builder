@@ -369,9 +369,10 @@ esac
 # Kernel version spoof
 if [ -n "$VERSION_SPOOF" ]; then
   echo "[*] Spoofing kernel version: $VERSION_SPOOF"
-  "$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" \
-    --set-str CONFIG_LOCALVERSION "-${VERSION_SPOOF}"
-  echo "CONFIG_LOCALVERSION_AUTO=n" >> "$OUT_DIR/.config"
+  IFS='.' read -r V PL SL <<< "$VERSION_SPOOF"
+  sed -i "s/^VERSION = .*/VERSION = $V/" "$KERNEL_DIR/Makefile"
+  sed -i "s/^PATCHLEVEL = .*/PATCHLEVEL = $PL/" "$KERNEL_DIR/Makefile"
+  sed -i "s/^SUBLEVEL = .*/SUBLEVEL = $SL/" "$KERNEL_DIR/Makefile"
 fi
 
 # Cmdline extras
