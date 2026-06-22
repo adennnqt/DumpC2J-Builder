@@ -6,8 +6,6 @@
 
 ## About
 
-DumpC2J-Builder is the CI/build infrastructure for [DumpC2J-Kernel](https://github.com/adennnqt/DumpC2J-Kernel) — a custom GKI 6.6 kernel for the **Xiaomi Poco F7 (codename: onyx)** running HyperOS 3.
-
 This repo handles:
 - GitHub Actions CI workflow for automated kernel builds
 - AnyKernel3 flashable ZIP packaging
