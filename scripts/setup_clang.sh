@@ -16,11 +16,10 @@ case "${CLANG_VARIANT}" in
     CLANG_BIN="${HOME}/toolchains/neutron-clang/bin"
     ;;
   cirrus)
-    mkdir -p "${GITHUB_WORKSPACE}/clang"
-    curl -Lo /tmp/get_clang.sh \
+    curl -Lo ~/get_clang.sh \
       https://raw.githubusercontent.com/greenforce-project/greenforce_clang/refs/heads/main/get_clang.sh
-    bash /tmp/get_clang.sh "${GITHUB_WORKSPACE}/clang"
-    CLANG_BIN=$(find "${GITHUB_WORKSPACE}/clang" -name "clang" -type f | head -1 | xargs dirname)
+    bash ~/get_clang.sh
+    CLANG_BIN="${GITHUB_WORKSPACE}/greenforce-clang/bin"
     ;;
   *)
     echo "[!] Unknown clang variant: ${CLANG_VARIANT}"
