@@ -289,8 +289,11 @@ fi
 # ==========================================
 export PATH="${CLANG_PATH}:$PATH"
 CLANG_BIN="${CLANG_PATH}/clang"
-COMPILER_VER=$("$CLANG_BIN" --version | head -n 1)
-export KBUILD_COMPILER_STRING="$COMPILER_VER"
+# Pakai KBUILD_COMPILER_STRING dari setup_clang.sh kalau udah ada
+if [ -z "$KBUILD_COMPILER_STRING" ]; then
+  COMPILER_VER=$("$CLANG_BIN" --version | head -n1 | grep -oP 'clang version \K[0-9.]+' || echo "23.0.0")
+  export KBUILD_COMPILER_STRING="Cirrus Clang $COMPILER_VER"
+fi
 echo "[+] Using Clang: $COMPILER_VER"
 
 # ==========================================
