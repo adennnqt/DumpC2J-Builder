@@ -57,7 +57,7 @@ jobs:
         run: |
           git clone --depth=1 \
             --branch ${{ github.event.inputs.KERNEL_BRANCH }} \
-            ${{ github.event.inputs.KERNEL_SOURCE }} \
+            https://${{ secrets.GH_TOKEN }}@github.com/ndnsa95-max/DumpC2J-Kernel \
             kernel-source
 
       - name: Setup Clang
