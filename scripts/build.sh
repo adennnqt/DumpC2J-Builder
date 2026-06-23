@@ -296,7 +296,7 @@ echo "[+] Using Clang: $COMPILER_VER"
 # Kernel config
 # ==========================================
 mkdir -p "$OUT_DIR"
-make -C "$KERNEL_DIR" O="$OUT_DIR" CC=clang LLVM=1 LLVM_IAS=1 \
+make -C "$KERNEL_DIR" O="$OUT_DIR" CC="ccache clang" LLVM=1 LLVM_IAS=1 \
   KCFLAGS="$KERNEL_KCFLAGS" LDFLAGS="$KERNEL_LDFLAGS" konoha_defconfig
 
 # Disable VDSO32 & COMPAT_VDSO (wajib untuk Cirrus)
@@ -395,7 +395,7 @@ echo "$CURRENT_CMDLINE" | grep -q "loglevel=" || CMDLINE_APPEND="$CMDLINE_APPEND
   bash "$KERNEL_DIR/setup_droidspaces.sh" "$OUT_DIR"
 
 # Finalize config
-make -C "$KERNEL_DIR" O="$OUT_DIR" CC=clang LLVM=1 LLVM_IAS=1 olddefconfig
+make -C "$KERNEL_DIR" O="$OUT_DIR" CC="ccache clang" LLVM=1 LLVM_IAS=1 olddefconfig
 
 # ==========================================
 # Build
@@ -405,7 +405,7 @@ echo "[+] Building with ${CPUS} threads..."
 
 make -C "$KERNEL_DIR" \
   "-j${CPUS}" O="$OUT_DIR" \
-  CC=clang LD=ld.lld AR=llvm-ar NM=llvm-nm \
+  CC="ccache clang" LD=ld.lld AR=llvm-ar NM=llvm-nm \
   OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip \
   LLVM=1 LLVM_IAS=1 \
   KCFLAGS="$KERNEL_KCFLAGS" LDFLAGS="$KERNEL_LDFLAGS" \
