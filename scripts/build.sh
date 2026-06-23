@@ -287,7 +287,7 @@ fi
 # ==========================================
 # Clang path
 # ==========================================
-export PATH="${CLANG_PATH}:$PATH"
+export PATH="/home/runner/.local/bin:${CLANG_PATH}:$PATH"
 CLANG_BIN="${CLANG_PATH}/clang"
 # KBUILD_COMPILER_STRING already set by setup_clang.sh
 echo "[+] Using Clang: $COMPILER_VER"
