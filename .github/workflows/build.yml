@@ -292,8 +292,6 @@ jobs:
           CCACHE_DIR: ~/.ccache
           PATH: /home/runner/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
           INPUT_VERSION_SPOOF: ${{ inputs.kernel_version_spoof }}
-          CCACHE_IS_KERNEL_COMPILING: "true"
-          CCACHE_DIR: ~/.ccache
         run: |
           bash builder/scripts/build.sh
 
