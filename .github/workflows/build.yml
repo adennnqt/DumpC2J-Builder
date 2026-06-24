@@ -273,12 +273,10 @@ jobs:
           INPUT_KERNEL_NAME: ${{ inputs.kernel_name }}
           INPUT_SPOOF_UNAME: ${{ inputs.spoof_uname }}
           INPUT_VERSION_SPOOF: ${{ inputs.kernel_version_spoof }}
-        env:
           CCACHE_DIR: /home/runner/.ccache
           CCACHE_IS_KERNEL_COMPILING: "true"
           CCACHE_COMPRESS: "1"
           CCACHE_COMPRESSLEVEL: "1"
-        run: |
           bash builder/scripts/build.sh
 
       - name: Upload Artifact
