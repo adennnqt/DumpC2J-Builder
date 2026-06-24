@@ -25,9 +25,14 @@ case "${CLANG_VARIANT}" in
     COMPILER_STRING="Cirrus Clang ${GF_VERSION}"
     ;;
   azure)
-    AZURE_URL=$(curl -s https://api.github.com/repos/Panchajanya1999/azure-clang/releases/latest       | python3 -c "import json,sys; a=json.load(sys.stdin)['assets']; print(next(x['browser_download_url'] for x in a if x['name'].endswith('.tar.gz')))")
+    # Azure Clang - repo lama, pakai tag release langsung
+    AZURE_TAG=$(curl -s https://api.github.com/repos/Panchajanya1999/azure-clang/releases/latest | python3 -c "import json,sys; print(json.load(sys.stdin).get('tag_name',''))" 2>/dev/null)
+    if [ -z "${AZURE_TAG}" ]; then
+      AZURE_TAG="clang-r416183b"
+    fi
+    AZURE_URL="https://github.com/Panchajanya1999/azure-clang/releases/download/${AZURE_TAG}/azure-clang.tar.gz"
     mkdir -p "${HOME}/toolchains/azure-clang"
-    wget -q "${AZURE_URL}" -O /tmp/azure-clang.tar.gz
+    curl -Lo /tmp/azure-clang.tar.gz "${AZURE_URL}"
     tar -xf /tmp/azure-clang.tar.gz -C "${HOME}/toolchains/azure-clang" --strip-components=1
     rm /tmp/azure-clang.tar.gz
     CLANG_BIN="${HOME}/toolchains/azure-clang/bin"
@@ -45,9 +50,9 @@ case "${CLANG_VARIANT}" in
     COMPILER_STRING="WeebX Clang ${WX_VER}"
     ;;
   zyc)
-    ZYC_URL=$(curl -s https://raw.githubusercontent.com/ZyCromerZ/Clang/main/Clang-main-link.txt)
+    ZYC_URL=$(curl -sL https://raw.githubusercontent.com/ZyCromerZ/Clang/main/Clang-main-link.txt | tr -d '[:space:]')
     mkdir -p "${HOME}/toolchains/zyc-clang"
-    wget -q "${ZYC_URL}" -O /tmp/zyc-clang.tar.gz
+    curl -Lo /tmp/zyc-clang.tar.gz "${ZYC_URL}"
     tar -xf /tmp/zyc-clang.tar.gz -C "${HOME}/toolchains/zyc-clang" --strip-components=1
     rm /tmp/zyc-clang.tar.gz
     CLANG_BIN="${HOME}/toolchains/zyc-clang/bin"
