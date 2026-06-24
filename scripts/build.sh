@@ -394,6 +394,17 @@ echo "$CURRENT_CMDLINE" | grep -q "loglevel=" || CMDLINE_APPEND="$CMDLINE_APPEND
 [ "$DROIDSPACES" == "on" ] && \
   bash "$KERNEL_DIR/setup_droidspaces.sh" "$OUT_DIR"
 
+# BBR fix - compiled-in tapi default CUBIC (hindari delay mobile)
+"$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" \
+  -e CONFIG_TCP_CONG_BBR \
+  -e CONFIG_TCP_CONG_CUBIC \
+  --set-str CONFIG_DEFAULT_TCP_CONG "cubic" \
+  -d CONFIG_DEFAULT_BBR
+
+# WALT scheduler - Qualcomm optimized load tracking
+"$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" \
+  -e CONFIG_SCHED_WALT
+
 # Finalize config
 make -C "$KERNEL_DIR" O="$OUT_DIR" CC=clang LLVM=1 LLVM_IAS=1 olddefconfig
 
