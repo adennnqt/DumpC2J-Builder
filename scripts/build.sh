@@ -288,6 +288,8 @@ fi
 # Clang path
 # ==========================================
 export PATH="/home/runner/.local/bin:${CLANG_PATH}:$PATH"
+export CCACHE_COMPILER="${CLANG_PATH}/clang"
+export CCACHE_BASEDIR="${KERNEL_DIR}"
 CLANG_BIN="${CLANG_PATH}/clang"
 # KBUILD_COMPILER_STRING already set by setup_clang.sh
 echo "[+] Using Clang: $COMPILER_VER"
