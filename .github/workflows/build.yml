@@ -23,6 +23,10 @@ on:
         options:
           - neutron
           - cirrus
+          - azure
+          - weebx
+          - zyc
+          - aosp
         default: cirrus
       hz:
         description: "Refresh Rate (HZ)"

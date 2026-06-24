@@ -24,6 +24,47 @@ case "${CLANG_VARIANT}" in
     GF_VERSION=$("${CLANG_BIN}/clang" --version | head -n1 | grep -oP 'clang version \K[0-9.]+' || echo "23.0.0")
     COMPILER_STRING="Cirrus Clang ${GF_VERSION}"
     ;;
+  azure)
+    AZURE_URL=$(curl -s https://api.github.com/repos/Panchajanya1999/azure-clang/releases/latest       | python3 -c "import json,sys; a=json.load(sys.stdin)['assets']; print(next(x['browser_download_url'] for x in a if x['name'].endswith('.tar.gz')))")
+    mkdir -p "${HOME}/toolchains/azure-clang"
+    wget -q "${AZURE_URL}" -O /tmp/azure-clang.tar.gz
+    tar -xf /tmp/azure-clang.tar.gz -C "${HOME}/toolchains/azure-clang" --strip-components=1
+    rm /tmp/azure-clang.tar.gz
+    CLANG_BIN="${HOME}/toolchains/azure-clang/bin"
+    AZ_VER=$("${CLANG_BIN}/clang" --version | head -n1 | grep -oP 'clang version \K[0-9.]+' || echo "latest")
+    COMPILER_STRING="Azure Clang ${AZ_VER}"
+    ;;
+  weebx)
+    WEEBX_URL=$(curl -s https://raw.githubusercontent.com/XSans0/WeebX-Clang/main/main/link.txt)
+    mkdir -p "${HOME}/toolchains/weebx-clang"
+    wget -q "${WEEBX_URL}" -O /tmp/weebx-clang.tar.gz
+    tar -xf /tmp/weebx-clang.tar.gz -C "${HOME}/toolchains/weebx-clang" --strip-components=1
+    rm /tmp/weebx-clang.tar.gz
+    CLANG_BIN="${HOME}/toolchains/weebx-clang/bin"
+    WX_VER=$("${CLANG_BIN}/clang" --version | head -n1 | grep -oP 'clang version \K[0-9.]+' || echo "latest")
+    COMPILER_STRING="WeebX Clang ${WX_VER}"
+    ;;
+  zyc)
+    ZYC_URL=$(curl -s https://raw.githubusercontent.com/ZyCromerZ/Clang/main/Clang-main-link.txt)
+    mkdir -p "${HOME}/toolchains/zyc-clang"
+    wget -q "${ZYC_URL}" -O /tmp/zyc-clang.tar.gz
+    tar -xf /tmp/zyc-clang.tar.gz -C "${HOME}/toolchains/zyc-clang" --strip-components=1
+    rm /tmp/zyc-clang.tar.gz
+    CLANG_BIN="${HOME}/toolchains/zyc-clang/bin"
+    ZYC_VER=$("${CLANG_BIN}/clang" --version | head -n1 | grep -oP 'clang version \K[0-9.]+' || echo "latest")
+    COMPILER_STRING="ZyC Clang ${ZYC_VER}"
+    ;;
+  aosp)
+    AOSP_CLANG=$(curl -s "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+/refs/heads/main/README.md?format=TEXT"       | base64 -d 2>/dev/null | grep -oP 'clang-r[0-9a-z]+' | tail -1)
+    AOSP_URL="https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/${AOSP_CLANG}.tar.gz"
+    mkdir -p "${HOME}/toolchains/aosp-clang"
+    curl -Lo /tmp/aosp-clang.tar.gz "${AOSP_URL}"
+    tar -xf /tmp/aosp-clang.tar.gz -C "${HOME}/toolchains/aosp-clang"
+    rm /tmp/aosp-clang.tar.gz
+    CLANG_BIN="${HOME}/toolchains/aosp-clang/bin"
+    AOSP_VER=$("${CLANG_BIN}/clang" --version | head -n1 | grep -oP 'clang version \K[0-9.]+' || echo "latest")
+    COMPILER_STRING="AOSP Clang ${AOSP_VER}"
+    ;;
   *)
     echo "[!] Unknown clang variant: ${CLANG_VARIANT}"
     exit 1
