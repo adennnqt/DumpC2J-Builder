@@ -428,6 +428,8 @@ make -C "$KERNEL_DIR" O="$OUT_DIR" CC=clang LLVM=1 LLVM_IAS=1 olddefconfig
 CPUS=$(nproc --all)
 echo "[+] Building with ${CPUS} threads..."
 
+echo "[DEBUG] CC_CCACHE=${CC_CCACHE:-EMPTY}"
+[ -f "${CC_CCACHE}" ] && cat "${CC_CCACHE}" || echo "[DEBUG] wrapper not found"
 make -C "$KERNEL_DIR" \
   "-j${CPUS}" O="$OUT_DIR" \
   CC="${CC_CCACHE:-clang}" LD=ld.lld AR=llvm-ar NM=llvm-nm \
