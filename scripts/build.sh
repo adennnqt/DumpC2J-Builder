@@ -298,9 +298,18 @@ if [ -f "$CCACHE_BIN" ]; then
   export CCACHE_COMPRESS=1
   export CCACHE_COMPRESSLEVEL=1
   export PATH="${HOME}/ccache-bin:${PATH}"
-  # Symlink clang -> ccache agar Kbuild auto-intercept
-  ln -sf "$CCACHE_BIN" "${HOME}/ccache-bin/clang"
-  echo "[+] ccache-ECS active | compiler: ${CLANG_PATH}/clang"
+  # Bikin wrapper script clang -> ccache
+  WRAPPER="${GITHUB_WORKSPACE}/clang-ccache"
+  {
+    echo "#!/bin/sh"
+    echo "export CCACHE_IS_KERNEL_COMPILING=true"
+    echo "export CCACHE_BASEDIR=${KERNEL_DIR}"
+    echo "export CCACHE_COMPILER=${CLANG_PATH}/clang"
+    echo "exec ${CCACHE_BIN} ${CLANG_PATH}/clang \"\$@\""
+  } > "$WRAPPER"
+  chmod +x "$WRAPPER"
+  export CC_CCACHE="$WRAPPER"
+  echo "[+] ccache-ECS active via wrapper"
 else
   echo "[!] ccache-ECS not found, skipping"
 fi
@@ -421,7 +430,7 @@ echo "[+] Building with ${CPUS} threads..."
 
 make -C "$KERNEL_DIR" \
   "-j${CPUS}" O="$OUT_DIR" \
-  CC=clang LD=ld.lld AR=llvm-ar NM=llvm-nm \
+  CC="${CC_CCACHE:-clang}" LD=ld.lld AR=llvm-ar NM=llvm-nm \
   OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip \
   LLVM=1 LLVM_IAS=1 \
   KCFLAGS="$KERNEL_KCFLAGS" LDFLAGS="$KERNEL_LDFLAGS" \
