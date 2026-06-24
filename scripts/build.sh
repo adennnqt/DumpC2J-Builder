@@ -483,7 +483,7 @@ echo "ZIP_NAME=$ZIP_NAME" >> "$GITHUB_ENV"
 [ "$KPM" == "on" ] && echo "KPM_SUPERKEY=$KPM_KEY" >> "$GITHUB_ENV"
 
 # ccache stats
-ccache --show-stats 2>/dev/null || true
+/home/runner/ccache-bin/ccache --show-stats 2>/dev/null || true
 
 BUILD_END=$(date +"%s")
 DIFF=$((BUILD_END - BUILD_START))
