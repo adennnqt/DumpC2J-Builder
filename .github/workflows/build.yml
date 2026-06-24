@@ -277,6 +277,7 @@ jobs:
           CCACHE_IS_KERNEL_COMPILING: "true"
           CCACHE_COMPRESS: "1"
           CCACHE_COMPRESSLEVEL: "1"
+        run: |
           bash builder/scripts/build.sh
 
       - name: Upload Artifact
