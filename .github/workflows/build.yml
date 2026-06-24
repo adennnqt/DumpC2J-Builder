@@ -223,12 +223,28 @@ jobs:
       - name: Setup Build Environment
         run: |
           sudo apt-get update
-          sudo apt-get install -y bc bison build-essential ccache curl flex \
+          sudo apt-get install -y bc bison build-essential ccache curl flex unzip \
             g++-multilib gcc-multilib git gnupg gperf imagemagick \
             lib32ncurses-dev lib32readline-dev lib32z1-dev libncurses-dev \
             libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush \
             rsync schedtool squashfs-tools xsltproc zip zlib1g-dev \
             python3 clang lld llvm jq
+
+      - name: Cache ccache-ECS
+        uses: actions/cache@v4
+        with:
+          path: |
+            /home/runner/.ccache
+            /home/runner/ccache-bin
+          key: ccache-ecs-${{ runner.os }}-${{ hashFiles('kernel-source/arch/arm64/configs/**') }}
+          restore-keys: |
+            ccache-ecs-${{ runner.os }}-
+
+      - name: Setup ccache-ECS
+        env:
+          CCACHE_DIR: /home/runner/.ccache
+          CCACHE_MAXSIZE: 5G
+        run: bash builder/scripts/setup_ccache.sh
 
       - name: Setup Clang
         run: |
