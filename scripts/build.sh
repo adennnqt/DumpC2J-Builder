@@ -288,6 +288,20 @@ fi
 # Clang path
 # ==========================================
 export PATH="${CLANG_PATH}:$PATH"
+
+# ccache-ECS integration (LuminaireProtocol pattern)
+CCACHE_BIN="${HOME}/ccache-bin/ccache"
+if [ -f "$CCACHE_BIN" ]; then
+  export CCACHE_COMPILER="${CLANG_PATH}/clang"
+  export CCACHE_BASEDIR="${KERNEL_DIR}"
+  export CCACHE_IS_KERNEL_COMPILING="true"
+  export CCACHE_COMPRESS=1
+  export CCACHE_COMPRESSLEVEL=1
+  export PATH="${HOME}/ccache-bin:${PATH}"
+  echo "[+] ccache-ECS active | compiler: ${CLANG_PATH}/clang"
+else
+  echo "[!] ccache-ECS not found, skipping"
+fi
 CLANG_BIN="${CLANG_PATH}/clang"
 # KBUILD_COMPILER_STRING already set by setup_clang.sh
 echo "[+] Using Clang: $COMPILER_VER"
@@ -470,6 +484,9 @@ cp "$ZIP_NAME" "$KERNEL_DIR/DumpC2J-Release/"
 
 echo "ZIP_NAME=$ZIP_NAME" >> "$GITHUB_ENV"
 [ "$KPM" == "on" ] && echo "KPM_SUPERKEY=$KPM_KEY" >> "$GITHUB_ENV"
+
+# ccache stats
+[ -f "${HOME}/ccache-bin/ccache" ] && ${HOME}/ccache-bin/ccache --show-stats || true
 
 BUILD_END=$(date +"%s")
 DIFF=$((BUILD_END - BUILD_START))
