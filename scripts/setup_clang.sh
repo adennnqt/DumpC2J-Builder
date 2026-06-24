@@ -52,9 +52,13 @@ case "${CLANG_VARIANT}" in
     ZYC_URL=$(curl -sL https://raw.githubusercontent.com/ZyCromerZ/Clang/main/Clang-main-link.txt | tr -d '[:space:]')
     mkdir -p "${HOME}/toolchains/zyc-clang"
     curl -Lo /tmp/zyc-clang.tar.gz "${ZYC_URL}"
-    STRIP=1
     FIRST=$(tar -tf /tmp/zyc-clang.tar.gz 2>/dev/null | head -1)
-    [[ "$FIRST" == "./" || "$FIRST" == "bin/" ]] && STRIP=0
+    if echo "$FIRST" | grep -qE '^(\./)?(bin|lib|include|share)/?$'; then
+      STRIP=0
+    else
+      STRIP=1
+    fi
+    echo "[*] ZyC first entry: ${FIRST} -> strip-components=${STRIP}"
     tar -xf /tmp/zyc-clang.tar.gz -C "${HOME}/toolchains/zyc-clang" --strip-components=${STRIP}
     rm /tmp/zyc-clang.tar.gz
     CLANG_BIN="${HOME}/toolchains/zyc-clang/bin"
@@ -62,10 +66,13 @@ case "${CLANG_VARIANT}" in
     COMPILER_STRING="ZyC Clang ${ZYC_VER}"
     ;;
   aosp)
+    AOSP_REPO="https://github.com/crdroidandroid/android_prebuilts_clang_host_linux-x86_clang-r536225"
     mkdir -p "${HOME}/toolchains/aosp-clang"
-    git clone --depth=1 --filter=blob:none --sparse \
-      https://github.com/crdroidandroid/android_prebuilts_clang_host_linux-x86_clang-r536225 \
-      /tmp/aosp-clang-repo
+    git clone --depth=1 --filter=blob:none --sparse "${AOSP_REPO}" /tmp/aosp-clang-repo
+    cd /tmp/aosp-clang-repo
+    git sparse-checkout set bin lib lib64 include
+    git checkout
+    cd -
     cp -r /tmp/aosp-clang-repo/. "${HOME}/toolchains/aosp-clang/"
     rm -rf /tmp/aosp-clang-repo
     CLANG_BIN="${HOME}/toolchains/aosp-clang/bin"
