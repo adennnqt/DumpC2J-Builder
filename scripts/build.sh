@@ -459,7 +459,14 @@ case "$HZ_ID" in
   *) HZ_LABEL="-balance" ;;
 esac
 
-ZIP_NAME="DumpC2J-${VERSION}${ZIP_SUFFIX}${HZ_LABEL}-${TIME}.zip"
+# Clang label
+CLANG_SHORT=$(echo "${KBUILD_COMPILER_STRING}" | sed 's/ Clang/Clang/g' | tr ' ' '-')
+
+# Spoof label
+SPOOF_LABEL=""
+[ -n "${VERSION_SPOOF}" ] && SPOOF_LABEL="-spoof${VERSION_SPOOF}"
+
+ZIP_NAME="DumpC2J-${VERSION}${ZIP_SUFFIX}-${CLANG_SHORT}${HZ_LABEL}${SPOOF_LABEL}-${TIME}.zip"
 cd "$TEMP_DIR" && zip -r9 "${GITHUB_WORKSPACE}/$ZIP_NAME" . \
   -x '.git*' -x 'README.md' -x '*placeholder' > /dev/null
 cd "$GITHUB_WORKSPACE"
