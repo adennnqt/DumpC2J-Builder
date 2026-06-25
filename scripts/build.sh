@@ -437,36 +437,40 @@ for img in Image.gz-dtb Image.gz Image; do
 done
 
 # Build zip name
-ZIP_SUFFIX=""
+# Variant label (hanya tulis kalau bukan stock)
+VARIANT_LABEL=""
 case "$VARIANT" in
-  stock) ZIP_SUFFIX="-stock" ;;
-  root)  ZIP_SUFFIX="-root-$REPO_NAME" ;;
-  susfs) ZIP_SUFFIX="-susfs-$REPO_NAME" ;;
+  root)  VARIANT_LABEL="-root-${ACTUAL_ROOT}" ;;
+  susfs) VARIANT_LABEL="-susfs-${ACTUAL_ROOT}" ;;
 esac
-[ "$KPM" == "on" ] && ZIP_SUFFIX="${ZIP_SUFFIX}-kpm"
-[ "$HARDENED" == "on" ] && ZIP_SUFFIX="${ZIP_SUFFIX}-hardened"
-[ "$BYPASSCHARGING" == "on" ] && ZIP_SUFFIX="${ZIP_SUFFIX}-bypasscharging"
-[ "$DROIDSPACES" == "on" ] && ZIP_SUFFIX="${ZIP_SUFFIX}-droidspaces"
-[ "$HTSR" == "off" ] && ZIP_SUFFIX="${ZIP_SUFFIX}-nohtsr"
-[ "$WIFI_EXPLOIT" == "off" ] && ZIP_SUFFIX="${ZIP_SUFFIX}-nowifi"
-[ "$KGSL_EXPLOIT" == "off" ] && ZIP_SUFFIX="${ZIP_SUFFIX}-nokgsl"
-[ "$DATA_EXPLOIT" == "off" ] && ZIP_SUFFIX="${ZIP_SUFFIX}-nodata"
+
+# Optional features (hanya tulis kalau aktif)
+OPT_LABEL=""
+[ "$KPM" == "on" ]          && OPT_LABEL="${OPT_LABEL}-kpm"
+[ "$HARDENED" == "on" ]     && OPT_LABEL="${OPT_LABEL}-hardened"
+[ "$BYPASSCHARGING" == "on" ] && OPT_LABEL="${OPT_LABEL}-bypasscharging"
+[ "$DROIDSPACES" == "on" ]  && OPT_LABEL="${OPT_LABEL}-droidspaces"
+[ "$HTSR" == "off" ]        && OPT_LABEL="${OPT_LABEL}-nohtsr"
+[ "$WIFI_EXPLOIT" == "off" ] && OPT_LABEL="${OPT_LABEL}-nowifi"
+[ "$KGSL_EXPLOIT" == "off" ] && OPT_LABEL="${OPT_LABEL}-nokgsl"
+[ "$DATA_EXPLOIT" == "off" ] && OPT_LABEL="${OPT_LABEL}-nodata"
+[ "$DEBUG" == "on" ]        && OPT_LABEL="${OPT_LABEL}-debug"
 
 case "$HZ_ID" in
-  100) HZ_LABEL="-powersave" ;;
-  500) HZ_LABEL="-performance" ;;
+  100)  HZ_LABEL="-powersave" ;;
+  500)  HZ_LABEL="-performance" ;;
   1000) HZ_LABEL="-ultra-performance" ;;
-  *) HZ_LABEL="-balance" ;;
+  *)    HZ_LABEL="-balance" ;;
 esac
 
-# Clang label
+# Clang label: "Neutron Clang 23.0.0" -> "NeutronClang23.0.0"
 CLANG_SHORT=$(echo "${KBUILD_COMPILER_STRING}" | sed 's/ Clang/Clang/g' | tr ' ' '-')
 
-# Spoof label
+# Spoof label (hanya tulis kalau ada)
 SPOOF_LABEL=""
 [ -n "${VERSION_SPOOF}" ] && SPOOF_LABEL="-spoof${VERSION_SPOOF}"
 
-ZIP_NAME="DumpC2J-${VERSION}${ZIP_SUFFIX}-${CLANG_SHORT}${HZ_LABEL}${SPOOF_LABEL}-${TIME}.zip"
+ZIP_NAME="anykern3-DumpC2J${VARIANT_LABEL}-${CLANG_SHORT}${HZ_LABEL}${OPT_LABEL}${SPOOF_LABEL}-${TIME}.zip"
 cd "$TEMP_DIR" && zip -r9 "${GITHUB_WORKSPACE}/$ZIP_NAME" . \
   -x '.git*' -x 'README.md' -x '*placeholder' > /dev/null
 cd "$GITHUB_WORKSPACE"
