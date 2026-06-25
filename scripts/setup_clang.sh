@@ -52,13 +52,17 @@ case "${CLANG_VARIANT}" in
     ZYC_URL=$(curl -sL https://raw.githubusercontent.com/ZyCromerZ/Clang/main/Clang-main-link.txt | tr -d '[:space:]')
     mkdir -p "${HOME}/toolchains/zyc-clang"
     curl -Lo /tmp/zyc-clang.tar.gz "${ZYC_URL}"
+    # Detect depth struktur tar
     FIRST=$(tar -tf /tmp/zyc-clang.tar.gz 2>/dev/null | head -1)
-    if echo "$FIRST" | grep -qE '^(\./)?(bin|lib|include|share)/?$'; then
+    if [[ "$FIRST" == "./" || "$FIRST" == "bin/" ]]; then
       STRIP=0
     else
-      STRIP=1
+      # Cek apakah bin/ ada di level 1 atau level 2
+      HAS_BIN_L1=$(tar -tf /tmp/zyc-clang.tar.gz 2>/dev/null | grep -m1 "^[^/]*/bin/$" || true)
+      HAS_BIN_L2=$(tar -tf /tmp/zyc-clang.tar.gz 2>/dev/null | grep -m1 "^[^/]*/[^/]*/bin/$" || true)
+      [ -n "$HAS_BIN_L2" ] && STRIP=2 || STRIP=1
     fi
-    echo "[*] ZyC first entry: ${FIRST} -> strip-components=${STRIP}"
+    echo "[*] ZyC strip-components=${STRIP}"
     tar -xf /tmp/zyc-clang.tar.gz -C "${HOME}/toolchains/zyc-clang" --strip-components=${STRIP}
     rm /tmp/zyc-clang.tar.gz
     CLANG_BIN="${HOME}/toolchains/zyc-clang/bin"
@@ -66,16 +70,13 @@ case "${CLANG_VARIANT}" in
     COMPILER_STRING="ZyC Clang ${ZYC_VER}"
     ;;
   aosp)
-    AOSP_REPO="https://github.com/crdroidandroid/android_prebuilts_clang_host_linux-x86_clang-r536225"
+    # AOSP Clang via android_prebuilts mirror
     mkdir -p "${HOME}/toolchains/aosp-clang"
-    git clone --depth=1 --filter=blob:none --sparse "${AOSP_REPO}" /tmp/aosp-clang-repo
-    cd /tmp/aosp-clang-repo
-    git sparse-checkout set bin lib lib64 include
-    git checkout
-    cd -
-    cp -r /tmp/aosp-clang-repo/. "${HOME}/toolchains/aosp-clang/"
-    rm -rf /tmp/aosp-clang-repo
-    CLANG_BIN="${HOME}/toolchains/aosp-clang/bin"
+    AOSP_URL="https://gitlab.com/crdroidandroid/android_prebuilts_clang_host_linux-x86/-/archive/15.0/android_prebuilts_clang_host_linux-x86-15.0.tar.gz"
+    curl -Lo /tmp/aosp-clang.tar.gz "${AOSP_URL}"
+    tar -xf /tmp/aosp-clang.tar.gz -C "${HOME}/toolchains/aosp-clang" --strip-components=1
+    rm /tmp/aosp-clang.tar.gz
+    CLANG_BIN="${HOME}/toolchains/aosp-clang/clang-r536225/bin"
     AOSP_VER=$("${CLANG_BIN}/clang" --version | head -n1 | grep -oP 'clang version \K[0-9.]+' || echo "latest")
     COMPILER_STRING="AOSP Clang ${AOSP_VER}"
     ;;
