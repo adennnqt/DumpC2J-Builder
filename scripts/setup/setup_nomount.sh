@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
 # setup_nomount.sh — Apply NoMount / ZeroMount patch to kernel source
-# Usage: bash setup_nomount.sh <kernel_dir> <method: nomount|zeromount>
 set -e
 
 KERNEL_DIR="${1:-${GITHUB_WORKSPACE}/kernel-source}"
 METHOD="${2:-nomount}"
 NAMESPACE_C="$KERNEL_DIR/fs/namespace.c"
-KCONFIG="$KERNEL_DIR/fs/Kconfig"
+FS_KCONFIG="$KERNEL_DIR/fs/Kconfig"
 
 if [ ! -f "$NAMESPACE_C" ]; then
   echo "[!] fs/namespace.c not found"
@@ -21,6 +20,30 @@ if grep -q "KSU_NOMOUNT\|KSU_ZEROMOUNT" "$NAMESPACE_C" 2>/dev/null; then
   exit 0
 fi
 
+# 1. Inject Kconfig entry ke fs/Kconfig
+if [ -f "$FS_KCONFIG" ] && ! grep -q "KSU_NOMOUNT\|KSU_ZEROMOUNT" "$FS_KCONFIG" 2>/dev/null; then
+  cat >> "$FS_KCONFIG" << 'KCONFIG_EOF'
+
+config KSU_NOMOUNT
+	bool "KernelSU NoMount support"
+	depends on KSU
+	default n
+	help
+	  Skip bind mounts for system partitions from init/zygote.
+	  Helps bypass mount detection for root hiding.
+
+config KSU_ZEROMOUNT
+	bool "KernelSU ZeroMount support"
+	depends on KSU
+	default n
+	help
+	  Redirect bind mounts for system partitions to empty tmpfs.
+	  Alternative to NoMount with different detection bypass approach.
+KCONFIG_EOF
+  echo "[+] Kconfig entries added"
+fi
+
+# 2. Inject patch ke namespace.c
 python3 - "$NAMESPACE_C" "$METHOD" << 'PYEOF'
 import sys
 
@@ -28,10 +51,6 @@ path   = sys.argv[1]
 method = sys.argv[2]
 content = open(path).read()
 
-# Config flag
-config = "CONFIG_KSU_NOMOUNT" if method == "nomount" else "CONFIG_KSU_ZEROMOUNT"
-
-# Helper function — injected before path_mount
 if method == "nomount":
     helper = r"""
 #ifdef CONFIG_KSU_NOMOUNT
@@ -45,7 +64,6 @@ static bool ksu_nomount_skip(struct path *path, unsigned long flags)
 	char buf[256];
 	char *str;
 
-	/* Only intercept bind mounts */
 	if (!(flags & MS_BIND))
 		return false;
 
@@ -68,7 +86,7 @@ static bool ksu_nomount_skip(struct path *path, unsigned long flags)
 		return 0;
 #endif
 """
-else:  # zeromount
+else:
     helper = r"""
 #ifdef CONFIG_KSU_ZEROMOUNT
 static bool ksu_zeromount_skip(struct path *path, unsigned long flags)
@@ -104,20 +122,18 @@ static bool ksu_zeromount_skip(struct path *path, unsigned long flags)
 #endif
 """
 
-# 1. Inject helper before path_mount
 anchor = 'int path_mount(const char *dev_name, struct path *path,'
 if anchor in content and helper not in content:
     content = content.replace(anchor, helper + anchor)
-    print(f"[+] Helper function injected")
+    print("[+] Helper injected")
 else:
     print("[!] anchor not found or already patched")
     sys.exit(1)
 
-# 2. Inject hook after may_mount() check
 hook_anchor = '\tif (!may_mount())\n\t\treturn -EPERM;'
 if hook_anchor in content and hook not in content:
     content = content.replace(hook_anchor, hook_anchor + hook)
-    print(f"[+] Hook injected after may_mount()")
+    print("[+] Hook injected")
 else:
     print("[!] hook anchor not found")
     sys.exit(1)
@@ -126,4 +142,4 @@ open(path, 'w').write(content)
 print(f"[+] {method} patch done")
 PYEOF
 
-echo "[+] $METHOD applied to namespace.c"
+echo "[+] $METHOD applied successfully"
