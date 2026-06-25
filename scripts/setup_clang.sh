@@ -72,7 +72,5 @@ esac
 echo "CLANG_PATH=${CLANG_BIN}" >> "${GITHUB_ENV}"
 echo "${CLANG_BIN}" >> "${GITHUB_PATH}"
 echo "KBUILD_COMPILER_STRING=${COMPILER_STRING}" >> "${GITHUB_ENV}"
-echo "KBUILD_BUILD_USER=adennnqt" >> "${GITHUB_ENV}"
-echo "KBUILD_BUILD_HOST=DumpC2J" >> "${GITHUB_ENV}"
 echo "[+] Clang ready: ${CLANG_BIN}"
 ${CLANG_BIN}/clang --version
