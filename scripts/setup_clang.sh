@@ -53,9 +53,17 @@ case "${CLANG_VARIANT}" in
     echo "[*] ZyC URL: ${ZYC_URL}"
     mkdir -p "${HOME}/toolchains/zyc-clang"
     curl -L --fail --retry 3 -o /tmp/zyc-clang.tar.gz "${ZYC_URL}"
-    echo "[*] ZyC tar structure (first 5):"
-    tar -tf /tmp/zyc-clang.tar.gz 2>/dev/null | head -5
-    tar -xf /tmp/zyc-clang.tar.gz -C "${HOME}/toolchains/zyc-clang" --strip-components=1
+    echo "[*] ZyC tar structure (first 10):"
+    tar -tf /tmp/zyc-clang.tar.gz 2>/dev/null | head -10
+    echo "[*] ZyC bin location:"
+    tar -tf /tmp/zyc-clang.tar.gz 2>/dev/null | grep -m3 'bin/clang'
+    STRIP=0
+    BIN_PATH=$(tar -tf /tmp/zyc-clang.tar.gz 2>/dev/null | grep -m1 'bin/clang$')
+    DEPTH=$(echo "$BIN_PATH" | tr '/' '\n' | wc -l)
+    STRIP=$(( DEPTH - 2 ))
+    [ "$STRIP" -lt 0 ] && STRIP=0
+    echo "[*] bin/clang found at: ${BIN_PATH} -> strip-components=${STRIP}"
+    tar -xf /tmp/zyc-clang.tar.gz -C "${HOME}/toolchains/zyc-clang" --strip-components=${STRIP}
     rm /tmp/zyc-clang.tar.gz
     CLANG_BIN="${HOME}/toolchains/zyc-clang/bin"
     ZYC_VER=$("${CLANG_BIN}/clang" --version | head -n1 | grep -oP 'clang version \K[0-9.]+' || echo "latest")
