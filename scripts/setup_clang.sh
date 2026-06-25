@@ -61,17 +61,6 @@ case "${CLANG_VARIANT}" in
     ZYC_VER=$("${CLANG_BIN}/clang" --version | head -n1 | grep -oP 'clang version \K[0-9.]+' || echo "latest")
     COMPILER_STRING="ZyC Clang ${ZYC_VER}"
     ;;
-  llvm)
-    LLVM_VER=$(curl -s https://api.github.com/repos/llvm/llvm-project/releases/latest       | python3 -c "import json,sys; print(json.load(sys.stdin)['tag_name'].replace('llvmorg-',''))")
-    LLVM_URL="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VER}/clang+llvm-${LLVM_VER}-aarch64-linux-gnu.tar.xz"
-    mkdir -p "${HOME}/toolchains/llvm-clang"
-    curl -Lo /tmp/llvm-clang.tar.xz "${LLVM_URL}"
-    tar -xf /tmp/llvm-clang.tar.xz -C "${HOME}/toolchains/llvm-clang" --strip-components=1
-    rm /tmp/llvm-clang.tar.xz
-    CLANG_BIN="${HOME}/toolchains/llvm-clang/bin"
-    LLVM_VER_OUT=$("${CLANG_BIN}/clang" --version | head -n1 | grep -oP 'clang version \K[0-9.]+' || echo "latest")
-    COMPILER_STRING="LLVM Clang ${LLVM_VER_OUT}"
-    ;;
   *)
     echo "[!] Unknown clang variant: ${CLANG_VARIANT}"
     exit 1
