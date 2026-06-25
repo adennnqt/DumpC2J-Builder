@@ -26,7 +26,7 @@ on:
           - azure
           - weebx
           - zyc
-          - aosp
+          - llvm
         default: cirrus
       hz:
         description: "Refresh Rate (HZ)"

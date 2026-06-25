@@ -52,15 +52,17 @@ case "${CLANG_VARIANT}" in
     ZYC_URL=$(curl -sL https://raw.githubusercontent.com/ZyCromerZ/Clang/main/Clang-main-link.txt | tr -d '[:space:]')
     mkdir -p "${HOME}/toolchains/zyc-clang"
     curl -Lo /tmp/zyc-clang.tar.gz "${ZYC_URL}"
-    # Detect depth struktur tar
+    echo "[*] ZyC tar structure (first 10):"
+    tar -tf /tmp/zyc-clang.tar.gz 2>/dev/null | head -10
     FIRST=$(tar -tf /tmp/zyc-clang.tar.gz 2>/dev/null | head -1)
+    HAS_BIN_L1=$(tar -tf /tmp/zyc-clang.tar.gz 2>/dev/null | grep -m1 "^[^/]*/bin/$" || true)
+    HAS_BIN_L2=$(tar -tf /tmp/zyc-clang.tar.gz 2>/dev/null | grep -m1 "^[^/]*/[^/]*/bin/$" || true)
     if [[ "$FIRST" == "./" || "$FIRST" == "bin/" ]]; then
       STRIP=0
+    elif [ -n "$HAS_BIN_L2" ]; then
+      STRIP=2
     else
-      # Cek apakah bin/ ada di level 1 atau level 2
-      HAS_BIN_L1=$(tar -tf /tmp/zyc-clang.tar.gz 2>/dev/null | grep -m1 "^[^/]*/bin/$" || true)
-      HAS_BIN_L2=$(tar -tf /tmp/zyc-clang.tar.gz 2>/dev/null | grep -m1 "^[^/]*/[^/]*/bin/$" || true)
-      [ -n "$HAS_BIN_L2" ] && STRIP=2 || STRIP=1
+      STRIP=1
     fi
     echo "[*] ZyC strip-components=${STRIP}"
     tar -xf /tmp/zyc-clang.tar.gz -C "${HOME}/toolchains/zyc-clang" --strip-components=${STRIP}
@@ -69,16 +71,16 @@ case "${CLANG_VARIANT}" in
     ZYC_VER=$("${CLANG_BIN}/clang" --version | head -n1 | grep -oP 'clang version \K[0-9.]+' || echo "latest")
     COMPILER_STRING="ZyC Clang ${ZYC_VER}"
     ;;
-  aosp)
-    # AOSP Clang via android_prebuilts mirror
-    mkdir -p "${HOME}/toolchains/aosp-clang"
-    AOSP_URL="https://gitlab.com/crdroidandroid/android_prebuilts_clang_host_linux-x86/-/archive/15.0/android_prebuilts_clang_host_linux-x86-15.0.tar.gz"
-    curl -Lo /tmp/aosp-clang.tar.gz "${AOSP_URL}"
-    tar -xf /tmp/aosp-clang.tar.gz -C "${HOME}/toolchains/aosp-clang" --strip-components=1
-    rm /tmp/aosp-clang.tar.gz
-    CLANG_BIN="${HOME}/toolchains/aosp-clang/clang-r536225/bin"
-    AOSP_VER=$("${CLANG_BIN}/clang" --version | head -n1 | grep -oP 'clang version \K[0-9.]+' || echo "latest")
-    COMPILER_STRING="AOSP Clang ${AOSP_VER}"
+  llvm)
+    LLVM_VER=$(curl -s https://api.github.com/repos/llvm/llvm-project/releases/latest       | python3 -c "import json,sys; print(json.load(sys.stdin)['tag_name'].replace('llvmorg-',''))")
+    LLVM_URL="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VER}/clang+llvm-${LLVM_VER}-aarch64-linux-gnu.tar.xz"
+    mkdir -p "${HOME}/toolchains/llvm-clang"
+    curl -Lo /tmp/llvm-clang.tar.xz "${LLVM_URL}"
+    tar -xf /tmp/llvm-clang.tar.xz -C "${HOME}/toolchains/llvm-clang" --strip-components=1
+    rm /tmp/llvm-clang.tar.xz
+    CLANG_BIN="${HOME}/toolchains/llvm-clang/bin"
+    LLVM_VER_OUT=$("${CLANG_BIN}/clang" --version | head -n1 | grep -oP 'clang version \K[0-9.]+' || echo "latest")
+    COMPILER_STRING="LLVM Clang ${LLVM_VER_OUT}"
     ;;
   *)
     echo "[!] Unknown clang variant: ${CLANG_VARIANT}"
