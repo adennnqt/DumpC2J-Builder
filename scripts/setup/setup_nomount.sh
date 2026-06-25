@@ -1,145 +1,65 @@
 #!/usr/bin/env bash
-# setup_nomount.sh — Apply NoMount / ZeroMount patch to kernel source
+# setup_nomount.sh — Apply NoMount kernel patch (maxsteeel/NoMount)
+# Usage: bash setup_nomount.sh <kernel_dir> <method: nomount|zeromount>
 set -e
 
 KERNEL_DIR="${1:-${GITHUB_WORKSPACE}/kernel-source}"
 METHOD="${2:-nomount}"
+NOMOUNT_DIR="${GITHUB_WORKSPACE}/builder/nomount-src"
 NAMESPACE_C="$KERNEL_DIR/fs/namespace.c"
-FS_KCONFIG="$KERNEL_DIR/fs/Kconfig"
 
-if [ ! -f "$NAMESPACE_C" ]; then
-  echo "[!] fs/namespace.c not found"
+if [ ! -d "$KERNEL_DIR" ]; then
+  echo "[!] Kernel dir not found: $KERNEL_DIR"
   exit 1
 fi
 
-echo "[*] Applying $METHOD patch..."
+echo "[*] Setting up $METHOD..."
+
+# Download nomount source jika belum ada
+if [ ! -d "$NOMOUNT_DIR" ]; then
+  mkdir -p "$NOMOUNT_DIR"
+  echo "[*] Downloading NoMount source..."
+  curl -sL https://raw.githubusercontent.com/maxsteeel/NoMount/main/kernel/src/nomount.c \
+    -o "$NOMOUNT_DIR/nomount.c"
+  curl -sL https://raw.githubusercontent.com/maxsteeel/NoMount/main/kernel/src/nomount.h \
+    -o "$NOMOUNT_DIR/nomount.h"
+  curl -sL https://raw.githubusercontent.com/maxsteeel/NoMount/main/kernel/patches/nomount_6.6_kernel_integration.patch \
+    -o "$NOMOUNT_DIR/nomount_6.6.patch"
+fi
 
 # Skip if already patched
-if grep -q "KSU_NOMOUNT\|KSU_ZEROMOUNT" "$NAMESPACE_C" 2>/dev/null; then
-  echo "[+] Already patched, skipping"
-  exit 0
-fi
-
-# 1. Inject Kconfig entry ke fs/Kconfig
-if [ -f "$FS_KCONFIG" ] && ! grep -q "KSU_NOMOUNT\|KSU_ZEROMOUNT" "$FS_KCONFIG" 2>/dev/null; then
-  cat >> "$FS_KCONFIG" << 'KCONFIG_EOF'
-
-config KSU_NOMOUNT
-	bool "KernelSU NoMount support"
-	depends on KSU
-	default n
-	help
-	  Skip bind mounts for system partitions from init/zygote.
-	  Helps bypass mount detection for root hiding.
-
-config KSU_ZEROMOUNT
-	bool "KernelSU ZeroMount support"
-	depends on KSU
-	default n
-	help
-	  Redirect bind mounts for system partitions to empty tmpfs.
-	  Alternative to NoMount with different detection bypass approach.
-KCONFIG_EOF
-  echo "[+] Kconfig entries added"
-fi
-
-# 2. Inject patch ke namespace.c
-python3 - "$NAMESPACE_C" "$METHOD" << 'PYEOF'
-import sys
-
-path   = sys.argv[1]
-method = sys.argv[2]
+if grep -q "CONFIG_NOMOUNT" "$KERNEL_DIR/fs/Kconfig" 2>/dev/null; then
+  echo "[+] NoMount already patched, skipping"
+else
+  echo "[*] Applying nomount_6.6.patch..."
+  # Hapus patch buatan sendiri dulu kalau ada
+  if grep -q "KSU_NOMOUNT\|KSU_ZEROMOUNT" "$NAMESPACE_C" 2>/dev/null; then
+    echo "[*] Removing old custom patch from namespace.c..."
+    python3 - "$NAMESPACE_C" << 'PYEOF'
+import sys, re
+path = sys.argv[1]
 content = open(path).read()
-
-if method == "nomount":
-    helper = r"""
-#ifdef CONFIG_KSU_NOMOUNT
-static bool ksu_nomount_skip(struct path *path, unsigned long flags)
-{
-	static const char * const blocked[] = {
-		"/system", "/vendor", "/product",
-		"/system_ext", "/odm", "/apex", NULL
-	};
-	const char * const *p;
-	char buf[256];
-	char *str;
-
-	if (!(flags & MS_BIND))
-		return false;
-
-	str = d_path(path, buf, sizeof(buf));
-	if (IS_ERR_OR_NULL(str))
-		return false;
-
-	for (p = blocked; *p; p++) {
-		if (strncmp(str, *p, strlen(*p)) == 0)
-			return true;
-	}
-	return false;
-}
-#endif /* CONFIG_KSU_NOMOUNT */
-
-"""
-    hook = r"""
-#ifdef CONFIG_KSU_NOMOUNT
-	if (ksu_nomount_skip(path, flags))
-		return 0;
-#endif
-"""
-else:
-    helper = r"""
-#ifdef CONFIG_KSU_ZEROMOUNT
-static bool ksu_zeromount_skip(struct path *path, unsigned long flags)
-{
-	static const char * const blocked[] = {
-		"/system", "/vendor", "/product",
-		"/system_ext", "/odm", "/apex", NULL
-	};
-	const char * const *p;
-	char buf[256];
-	char *str;
-
-	if (!(flags & MS_BIND))
-		return false;
-
-	str = d_path(path, buf, sizeof(buf));
-	if (IS_ERR_OR_NULL(str))
-		return false;
-
-	for (p = blocked; *p; p++) {
-		if (strncmp(str, *p, strlen(*p)) == 0)
-			return true;
-	}
-	return false;
-}
-#endif /* CONFIG_KSU_ZEROMOUNT */
-
-"""
-    hook = r"""
-#ifdef CONFIG_KSU_ZEROMOUNT
-	if (ksu_zeromount_skip(path, flags))
-		return 0;
-#endif
-"""
-
-anchor = 'int path_mount(const char *dev_name, struct path *path,'
-if anchor in content and helper not in content:
-    content = content.replace(anchor, helper + anchor)
-    print("[+] Helper injected")
-else:
-    print("[!] anchor not found or already patched")
-    sys.exit(1)
-
-hook_anchor = '\tif (!may_mount())\n\t\treturn -EPERM;'
-if hook_anchor in content and hook not in content:
-    content = content.replace(hook_anchor, hook_anchor + hook)
-    print("[+] Hook injected")
-else:
-    print("[!] hook anchor not found")
-    sys.exit(1)
-
+# Hapus helper function buatan lama
+content = re.sub(r'\n#ifdef CONFIG_KSU_NOMOUNT.*?#endif /\* CONFIG_KSU_NOMOUNT \*/\n\n', '\n', content, flags=re.DOTALL)
+content = re.sub(r'\n#ifdef CONFIG_KSU_ZEROMOUNT.*?#endif /\* CONFIG_KSU_ZEROMOUNT \*/\n\n', '\n', content, flags=re.DOTALL)
+# Hapus hook buatan lama
+content = re.sub(r'\n#ifdef CONFIG_KSU_NOMOUNT\n\tif \(ksu_nomount_skip.*?#endif\n', '\n', content, flags=re.DOTALL)
+content = re.sub(r'\n#ifdef CONFIG_KSU_ZEROMOUNT\n\tif \(ksu_zeromount_skip.*?#endif\n', '\n', content, flags=re.DOTALL)
 open(path, 'w').write(content)
-print(f"[+] {method} patch done")
+print("[+] Old custom patch removed")
 PYEOF
+  fi
 
-echo "[+] $METHOD applied successfully"
+  # Apply official patch
+  git -C "$KERNEL_DIR" apply --ignore-whitespace "$NOMOUNT_DIR/nomount_6.6.patch" && \
+    echo "[+] Patch applied successfully" || \
+    { echo "[!] Patch failed, trying with --reject..."; \
+      git -C "$KERNEL_DIR" apply --ignore-whitespace --reject "$NOMOUNT_DIR/nomount_6.6.patch" || true; }
+fi
+
+# Copy nomount.c dan nomount.h ke kernel
+echo "[*] Copying nomount source files..."
+cp "$NOMOUNT_DIR/nomount.c" "$KERNEL_DIR/fs/nomount.c"
+cp "$NOMOUNT_DIR/nomount.h" "$KERNEL_DIR/fs/nomount.h"
+
+echo "[+] NoMount ($METHOD) setup complete"
