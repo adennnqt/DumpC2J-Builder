@@ -20,16 +20,14 @@ case "${CLANG_VARIANT}" in
     curl -Lo ~/get_clang.sh \
       https://raw.githubusercontent.com/greenforce-project/greenforce_clang/refs/heads/main/get_clang.sh
     bash ~/get_clang.sh
-    CLANG_BIN="${GITHUB_WORKSPACE}/greenforce-clang/bin"
+    CLANG_BIN="${HOME}/greenforce-clang/bin"
     GF_VERSION=$("${CLANG_BIN}/clang" --version | head -n1 | grep -oP 'clang version \K[0-9.]+' || echo "23.0.0")
     COMPILER_STRING="Cirrus Clang ${GF_VERSION}"
     ;;
   azure)
-    AZURE_URL=$(curl -s https://api.github.com/repos/Panchajanya1999/clang-llvm/releases/latest       | python3 -c "import json,sys; d=json.load(sys.stdin); print(next((x['browser_download_url'] for x in d.get('assets',[]) if x['name'].endswith('.tar.gz')), ''))")
-    if [ -z "${AZURE_URL}" ]; then
-      echo "[!] Azure Clang release not found, falling back to WeebX"
-      AZURE_URL=$(curl -s https://raw.githubusercontent.com/XSans0/WeebX-Clang/main/main/link.txt)
-    fi
+    # Panchajanya1999/clang-llvm inactive, use WeebX directly
+    echo "[!] Azure upstream inactive, using WeebX base"
+    AZURE_URL=$(curl -s https://raw.githubusercontent.com/XSans0/WeebX-Clang/main/main/link.txt)
     mkdir -p "${HOME}/toolchains/azure-clang"
     curl -Lo /tmp/azure-clang.tar.gz "${AZURE_URL}"
     tar -xf /tmp/azure-clang.tar.gz -C "${HOME}/toolchains/azure-clang" --strip-components=1
