@@ -224,7 +224,8 @@ if [ "$KPM" == "on" ]; then
 
   if [ "$ROOT" == "apatch" ] || [ "$ROOT" == "folkpatch" ]; then
     if [ "$ROOT" == "folkpatch" ]; then
-      KPM_RELEASE_BASE="https://github.com/LyraVoid/KernelPatch/releases/download/0.13.1"
+      FOLKPATCH_VER=$(curl -s https://api.github.com/repos/LyraVoid/KernelPatch/releases/latest | python3 -c "import json,sys; print(json.load(sys.stdin)['tag_name'])" 2>/dev/null || echo "0.13.1")
+      KPM_RELEASE_BASE="https://github.com/LyraVoid/KernelPatch/releases/download/${FOLKPATCH_VER}"
       KPIMG_NAME="kpimg-android"
     else
       KPM_RELEASE_BASE="https://github.com/bmax121/KernelPatch/releases/latest/download"
@@ -241,7 +242,7 @@ if [ "$KPM" == "on" ]; then
   if [ ! -f "$KPTOOLS_BIN" ] || [ ! -f "$KPIMG_BIN" ]; then
     echo "[+] Downloading KPM tools..."
     if [ "$ROOT" == "folkpatch" ]; then
-      KPTOOLS_URL="https://github.com/LyraVoid/KernelPatch/releases/download/0.13.1/kptools-linux"
+      KPTOOLS_URL="${KPM_RELEASE_BASE}/kptools-linux"
     else
       KPTOOLS_URL="$KPM_RELEASE_BASE/kptools-linux"
     fi
