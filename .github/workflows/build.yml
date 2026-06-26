@@ -246,7 +246,7 @@ jobs:
         id: clang-cache
         uses: actions/cache@v4
         with:
-          path: ~/toolchains
+          path: /home/runner/toolchains
           key: clang-${{ inputs.clang_variant }}-${{ hashFiles('builder/scripts/setup_clang.sh') }}
           restore-keys: |
             clang-${{ inputs.clang_variant }}-

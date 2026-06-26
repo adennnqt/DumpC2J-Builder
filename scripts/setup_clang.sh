@@ -15,6 +15,12 @@ if [ "${CACHE_HIT}" == "--cache-hit" ]; then
     weebx)   CLANG_BIN="${HOME}/toolchains/weebx-clang/bin" ;;
     zyc)     CLANG_BIN="${HOME}/toolchains/zyc-clang/bin" ;;
   esac
+  # Re-patch glibc after cache restore (antman patch not preserved in cache)
+  if [ "${CLANG_VARIANT}" == "neutron" ]; then
+    cd "${HOME}/toolchains/neutron-clang"
+    [ -f antman ] && ./antman --patch=glibc || true
+    cd -
+  fi
   COMPILER_VER=$("${CLANG_BIN}/clang" --version | head -n1 || echo "unknown")
   echo "CLANG_PATH=${CLANG_BIN}" >> "${GITHUB_ENV}"
   echo "${CLANG_BIN}" >> "${GITHUB_PATH}"
