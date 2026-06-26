@@ -138,7 +138,7 @@ else
   if [ "$VARIANT" == "susfs" ]; then
     SUSFS_DIR="$MODULES_DIR/susfs4ksu"
     if [ ! -d "$SUSFS_DIR" ]; then
-      git clone https://gitlab.com/simonpunk/susfs4ksu.git -b gki-android15-6.6-dev "$SUSFS_DIR"
+      git clone --depth=1 https://gitlab.com/simonpunk/susfs4ksu.git -b gki-android15-6.6-dev "$SUSFS_DIR"
     else
       (cd "$SUSFS_DIR" && git fetch origin && git reset --hard origin/gki-android15-6.6-dev || true)
     fi
