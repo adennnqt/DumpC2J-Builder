@@ -128,7 +128,7 @@ else
   mkdir -p "$MODULES_DIR"
   if [ ! -d "$MODULES_DIR/$REPO_NAME" ]; then
     echo "[+] Cloning $REPO_NAME..."
-    git clone -b "$BRANCH" "$ROOT_REPO" "$MODULES_DIR/$REPO_NAME"
+    git clone --depth=1 -b "$BRANCH" "$ROOT_REPO" "$MODULES_DIR/$REPO_NAME"
   else
     echo "[+] Updating $REPO_NAME..."
     (cd "$MODULES_DIR/$REPO_NAME" && git fetch origin && git reset --hard "origin/$BRANCH" || true)
