@@ -242,9 +242,24 @@ jobs:
             rsync schedtool squashfs-tools xsltproc zip zlib1g-dev \
             python3 clang lld llvm jq
 
+      - name: Restore Clang Cache
+        id: clang-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/toolchains
+          key: clang-${{ inputs.clang_variant }}-${{ hashFiles('builder/scripts/setup_clang.sh') }}
+          restore-keys: |
+            clang-${{ inputs.clang_variant }}-
+
       - name: Setup Clang
+        if: steps.clang-cache.outputs.cache-hit != 'true'
         run: |
           bash builder/scripts/setup_clang.sh ${{ inputs.clang_variant }}
+
+      - name: Load Clang from Cache
+        if: steps.clang-cache.outputs.cache-hit == 'true'
+        run: |
+          bash builder/scripts/setup_clang.sh ${{ inputs.clang_variant }} --cache-hit
 
       - name: Setup AnyKernel3
         run: |

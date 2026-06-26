@@ -2,8 +2,33 @@
 set -e
 
 CLANG_VARIANT="${1:-neutron}"
+CACHE_HIT="${2:-}"
 
 echo "[*] Setting up Clang: ${CLANG_VARIANT}"
+
+# If cache hit, just set env vars and exit
+if [ "${CACHE_HIT}" == "--cache-hit" ]; then
+  echo "[+] Clang restored from cache"
+  case "${CLANG_VARIANT}" in
+    neutron) CLANG_BIN="${HOME}/toolchains/neutron-clang/bin" ;;
+    cirrus)  CLANG_BIN="${HOME}/toolchains/cirrus-clang/bin" ;;
+    weebx)   CLANG_BIN="${HOME}/toolchains/weebx-clang/bin" ;;
+    zyc)     CLANG_BIN="${HOME}/toolchains/zyc-clang/bin" ;;
+  esac
+  COMPILER_VER=$("${CLANG_BIN}/clang" --version | head -n1 || echo "unknown")
+  echo "CLANG_PATH=${CLANG_BIN}" >> "${GITHUB_ENV}"
+  echo "${CLANG_BIN}" >> "${GITHUB_PATH}"
+  COMPILER_STRING=$(echo "$COMPILER_VER" | grep -oP '(?<=clang version )[0-9.]+' | head -1)
+  case "${CLANG_VARIANT}" in
+    neutron) COMPILER_STRING="Neutron Clang ${COMPILER_STRING}" ;;
+    cirrus)  COMPILER_STRING="Cirrus Clang ${COMPILER_STRING}" ;;
+    weebx)   COMPILER_STRING="WeebX Clang ${COMPILER_STRING}" ;;
+    zyc)     COMPILER_STRING="ZyC Clang ${COMPILER_STRING}" ;;
+  esac
+  echo "KBUILD_COMPILER_STRING=${COMPILER_STRING}" >> "${GITHUB_ENV}"
+  "${CLANG_BIN}/clang" --version
+  exit 0
+fi
 
 case "${CLANG_VARIANT}" in
   neutron)
@@ -16,6 +41,7 @@ case "${CLANG_VARIANT}" in
     CLANG_BIN="${HOME}/toolchains/neutron-clang/bin"
     NEUTRON_VER=$("${CLANG_BIN}/clang" --version | head -n1 | grep -oP 'clang version \K[0-9.]+' || echo "latest")
     COMPILER_STRING="Neutron Clang ${NEUTRON_VER}"
+    echo "CLANG_CACHE_KEY=neutron-${NEUTRON_VER}" >> "${GITHUB_ENV}"
     ;;
   cirrus)
     CIRRUS_URL=$(curl -s https://api.github.com/repos/greenforce-project/greenforce_clang/releases/latest \
@@ -32,6 +58,7 @@ case "${CLANG_VARIANT}" in
     CLANG_BIN="${HOME}/toolchains/cirrus-clang/bin"
     GF_VERSION=$("${CLANG_BIN}/clang" --version | head -n1 | grep -oP 'clang version \K[0-9.]+' || echo "23.0.0")
     COMPILER_STRING="Cirrus Clang ${GF_VERSION}"
+    echo "CLANG_CACHE_KEY=cirrus-${GF_VERSION}" >> "${GITHUB_ENV}"
     ;;
   weebx)
     WEEBX_URL=$(curl -s https://raw.githubusercontent.com/XSans0/WeebX-Clang/main/main/link.txt)
@@ -42,6 +69,7 @@ case "${CLANG_VARIANT}" in
     CLANG_BIN="${HOME}/toolchains/weebx-clang/bin"
     WX_VER=$("${CLANG_BIN}/clang" --version | head -n1 | grep -oP 'clang version \K[0-9.]+' || echo "latest")
     COMPILER_STRING="WeebX Clang ${WX_VER}"
+    echo "CLANG_CACHE_KEY=weebx-${WX_VER}" >> "${GITHUB_ENV}"
     ;;
   zyc)
     ZYC_URL=$(curl -sL https://raw.githubusercontent.com/ZyCromerZ/Clang/main/Clang-main-link.txt | tr -d '[:space:]')
@@ -63,6 +91,7 @@ case "${CLANG_VARIANT}" in
     CLANG_BIN="${HOME}/toolchains/zyc-clang/bin"
     ZYC_VER=$("${CLANG_BIN}/clang" --version | head -n1 | grep -oP 'clang version \K[0-9.]+' || echo "latest")
     COMPILER_STRING="ZyC Clang ${ZYC_VER}"
+    echo "CLANG_CACHE_KEY=zyc-${ZYC_VER}" >> "${GITHUB_ENV}"
     ;;
   *)
     echo "[!] Unknown clang variant: ${CLANG_VARIANT}"
