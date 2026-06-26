@@ -40,6 +40,7 @@ NOMOUNT="${INPUT_NOMOUNT:-off}"
 case "$HZ" in
   powersave) HZ_ID=100 ;;
   balance) HZ_ID=250 ;;
+  pro) HZ_ID=300 ;;
   performance) HZ_ID=500 ;;
   ultra-performance) HZ_ID=1000 ;;
   *) HZ_ID="${HZ}" ;;
@@ -475,6 +476,7 @@ OPT_LABEL=""
 
 case "$HZ_ID" in
   100)  HZ_LABEL="-powersave" ;;
+  300)  HZ_LABEL="-pro" ;;
   500)  HZ_LABEL="-performance" ;;
   1000) HZ_LABEL="-ultra-performance" ;;
   *)    HZ_LABEL="-balance" ;;
