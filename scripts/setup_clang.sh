@@ -14,7 +14,8 @@ case "${CLANG_VARIANT}" in
     ./antman -S
     ./antman --patch=glibc
     CLANG_BIN="${HOME}/toolchains/neutron-clang/bin"
-    COMPILER_STRING="Neutron Clang 23.0.0"
+    NEUTRON_VER=$("${CLANG_BIN}/clang" --version | head -n1 | grep -oP 'clang version \K[0-9.]+' || echo "latest")
+    COMPILER_STRING="Neutron Clang ${NEUTRON_VER}"
     ;;
   cirrus)
     CIRRUS_URL=$(curl -s https://api.github.com/repos/greenforce-project/greenforce_clang/releases/latest \
