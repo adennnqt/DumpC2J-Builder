@@ -381,9 +381,13 @@ esac
 if [ -n "$VERSION_SPOOF" ]; then
   echo "[*] Spoofing kernel version: $VERSION_SPOOF"
   IFS='.' read -r V PL SL <<< "$VERSION_SPOOF"
-  sed -i "s/^VERSION = .*/VERSION = $V/" "$KERNEL_DIR/Makefile"
-  sed -i "s/^PATCHLEVEL = .*/PATCHLEVEL = $PL/" "$KERNEL_DIR/Makefile"
-  sed -i "s/^SUBLEVEL = .*/SUBLEVEL = $SL/" "$KERNEL_DIR/Makefile"
+  if [ -z "$V" ] || [ -z "$PL" ] || [ -z "$SL" ]; then
+    echo "[!] Invalid VERSION_SPOOF format: '$VERSION_SPOOF' (expected x.x.x), skipping spoof."
+  else
+    sed -i "s/^VERSION = .*/VERSION = $V/" "$KERNEL_DIR/Makefile"
+    sed -i "s/^PATCHLEVEL = .*/PATCHLEVEL = $PL/" "$KERNEL_DIR/Makefile"
+    sed -i "s/^SUBLEVEL = .*/SUBLEVEL = $SL/" "$KERNEL_DIR/Makefile"
+  fi
 fi
 
 # Cmdline extras
