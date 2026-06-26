@@ -2,8 +2,39 @@
 set -e
 
 CLANG_VARIANT="${1:-neutron}"
+CACHE_HIT="${2:-}"
 
 echo "[*] Setting up Clang: ${CLANG_VARIANT}"
+
+if [ "${CACHE_HIT}" == "--cache-hit" ]; then
+  echo "[+] Clang restored from cache"
+  case "${CLANG_VARIANT}" in
+    neutron) CLANG_BIN="${HOME}/toolchains/neutron-clang/bin" ;;
+    cirrus)  CLANG_BIN="${HOME}/toolchains/cirrus-clang/bin" ;;
+    weebx)   CLANG_BIN="${HOME}/toolchains/weebx-clang/bin" ;;
+    zyc)     CLANG_BIN="${HOME}/toolchains/zyc-clang/bin" ;;
+  esac
+  # Only re-patch glibc if clang cannot execute (e.g. after cache restore)
+  if ! "${CLANG_BIN}/clang" --version > /dev/null 2>&1; then
+    if [ "${CLANG_VARIANT}" == "neutron" ]; then
+      cd "${HOME}/toolchains/neutron-clang"
+      [ -f antman ] && ./antman --patch=glibc || true
+      cd -
+    fi
+  fi
+  COMPILER_VER=$("${CLANG_BIN}/clang" --version | head -n1 | grep -oP 'clang version \K[0-9.]+' || echo "latest")
+  case "${CLANG_VARIANT}" in
+    neutron) COMPILER_STRING="Neutron Clang ${COMPILER_VER}" ;;
+    cirrus)  COMPILER_STRING="Cirrus Clang ${COMPILER_VER}" ;;
+    weebx)   COMPILER_STRING="WeebX Clang ${COMPILER_VER}" ;;
+    zyc)     COMPILER_STRING="ZyC Clang ${COMPILER_VER}" ;;
+  esac
+  echo "CLANG_PATH=${CLANG_BIN}" >> "${GITHUB_ENV}"
+  echo "${CLANG_BIN}" >> "${GITHUB_PATH}"
+  echo "KBUILD_COMPILER_STRING=${COMPILER_STRING}" >> "${GITHUB_ENV}"
+  "${CLANG_BIN}/clang" --version
+  exit 0
+fi
 
 case "${CLANG_VARIANT}" in
   neutron)
