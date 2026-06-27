@@ -40,6 +40,7 @@ NOMOUNT="${INPUT_NOMOUNT:-off}"
 case "$HZ" in
   powersave) HZ_ID=100 ;;
   balance) HZ_ID=250 ;;
+  smooth) HZ_ID=300 ;;
   performance) HZ_ID=500 ;;
   ultra-performance) HZ_ID=1000 ;;
   *) HZ_ID="${HZ}" ;;
@@ -333,6 +334,9 @@ case "$HZ_ID" in
   100)  "$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" \
     -d CONFIG_HZ_300 -d CONFIG_HZ_250 -d CONFIG_HZ_500 -d CONFIG_HZ_1000 \
     -e CONFIG_HZ_100 --set-val CONFIG_HZ 100 -e CONFIG_RCU_LAZY ;;
+  300)  "$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" \
+    -d CONFIG_HZ_100 -d CONFIG_HZ_250 -d CONFIG_HZ_500 -d CONFIG_HZ_1000 \
+    -e CONFIG_HZ_300 --set-val CONFIG_HZ 300 -d CONFIG_RCU_LAZY ;;
   500)  "$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" \
     -d CONFIG_HZ_300 -d CONFIG_HZ_250 -d CONFIG_HZ_100 -d CONFIG_HZ_1000 \
     -e CONFIG_HZ_500 --set-val CONFIG_HZ 500 -d CONFIG_RCU_LAZY ;;
@@ -475,6 +479,7 @@ OPT_LABEL=""
 
 case "$HZ_ID" in
   100)  HZ_LABEL="-powersave" ;;
+  300)  HZ_LABEL="-smooth" ;;
   500)  HZ_LABEL="-performance" ;;
   1000) HZ_LABEL="-ultra-performance" ;;
   *)    HZ_LABEL="-balance" ;;

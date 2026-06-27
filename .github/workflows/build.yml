@@ -33,6 +33,7 @@ on:
         options:
           - powersave
           - balance
+          - smooth
           - performance
           - ultra-performance
         default: ultra-performance
@@ -189,6 +190,7 @@ jobs:
           if [ "$INPUT_HZ" == "powersave" ]; then HZ_ID=100
           elif [ "$INPUT_HZ" == "balance" ]; then HZ_ID=250
           elif [ "$INPUT_HZ" == "performance" ]; then HZ_ID=500
+          elif [ "$INPUT_HZ" == "smooth" ]; then HZ_ID=300
           elif [ "$INPUT_HZ" == "ultra-performance" ]; then HZ_ID=1000
           fi
           echo "HZ_ID=$HZ_ID" >> $GITHUB_ENV
