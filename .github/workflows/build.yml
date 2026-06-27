@@ -257,6 +257,7 @@ jobs:
       - name: Build Kernel
         env:
           KPM_SUPERKEY_SECRET: ${{ secrets.KPM_SUPERKEY }}
+          INPUT_HZ: ${{ inputs.hz }}
           INPUT_VARIANT: ${{ inputs.variant }}
           INPUT_ROOT: ${{ inputs.root }}
           INPUT_KPM: ${{ inputs.kpm }}
