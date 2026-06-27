@@ -301,6 +301,15 @@ echo "[+] Using Clang: $COMPILER_VER"
 # Kernel config
 # ==========================================
 mkdir -p "$OUT_DIR"
+
+# Apply HZ to defconfig before make
+case "$HZ_ID" in
+  100) sed -i 's/CONFIG_HZ_300=y/# CONFIG_HZ_300 is not set/g; s/CONFIG_HZ_250=y/# CONFIG_HZ_250 is not set/g; s/CONFIG_HZ_500=y/# CONFIG_HZ_500 is not set/g; s/CONFIG_HZ_1000=y/# CONFIG_HZ_1000 is not set/g; s/# CONFIG_HZ_100 is not set/CONFIG_HZ_100=y/g; s/CONFIG_HZ=.*/CONFIG_HZ=100/' arch/arm64/configs/konoha_defconfig ;;
+  250) sed -i 's/CONFIG_HZ_300=y/# CONFIG_HZ_300 is not set/g; s/CONFIG_HZ_100=y/# CONFIG_HZ_100 is not set/g; s/CONFIG_HZ_500=y/# CONFIG_HZ_500 is not set/g; s/CONFIG_HZ_1000=y/# CONFIG_HZ_1000 is not set/g; s/# CONFIG_HZ_250 is not set/CONFIG_HZ_250=y/g; s/CONFIG_HZ=.*/CONFIG_HZ=250/' arch/arm64/configs/konoha_defconfig ;;
+  300) sed -i 's/CONFIG_HZ_250=y/# CONFIG_HZ_250 is not set/g; s/CONFIG_HZ_100=y/# CONFIG_HZ_100 is not set/g; s/CONFIG_HZ_500=y/# CONFIG_HZ_500 is not set/g; s/CONFIG_HZ_1000=y/# CONFIG_HZ_1000 is not set/g; s/# CONFIG_HZ_300 is not set/CONFIG_HZ_300=y/g; s/CONFIG_HZ=.*/CONFIG_HZ=300/' arch/arm64/configs/konoha_defconfig ;;
+  500) sed -i 's/CONFIG_HZ_300=y/# CONFIG_HZ_300 is not set/g; s/CONFIG_HZ_100=y/# CONFIG_HZ_100 is not set/g; s/CONFIG_HZ_250=y/# CONFIG_HZ_250 is not set/g; s/CONFIG_HZ_1000=y/# CONFIG_HZ_1000 is not set/g; s/# CONFIG_HZ_500 is not set/CONFIG_HZ_500=y/g; s/CONFIG_HZ=.*/CONFIG_HZ=500/' arch/arm64/configs/konoha_defconfig ;;
+  1000) sed -i 's/CONFIG_HZ_300=y/# CONFIG_HZ_300 is not set/g; s/CONFIG_HZ_100=y/# CONFIG_HZ_100 is not set/g; s/CONFIG_HZ_250=y/# CONFIG_HZ_250 is not set/g; s/CONFIG_HZ_500=y/# CONFIG_HZ_500 is not set/g; s/# CONFIG_HZ_1000 is not set/CONFIG_HZ_1000=y/g; s/CONFIG_HZ=.*/CONFIG_HZ=1000/' arch/arm64/configs/konoha_defconfig ;;
+esac
 make -C "$KERNEL_DIR" O="$OUT_DIR" CC=clang LLVM=1 LLVM_IAS=1 \
   KCFLAGS="$KERNEL_KCFLAGS" LDFLAGS="$KERNEL_LDFLAGS" konoha_defconfig
 
