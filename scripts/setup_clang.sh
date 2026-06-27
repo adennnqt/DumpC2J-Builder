@@ -35,8 +35,9 @@ case "${CLANG_VARIANT}" in
     ;;
   weebx)
     WEEBX_URL=$(curl -s https://raw.githubusercontent.com/XSans0/WeebX-Clang/main/main/link.txt)
+    [ -z "${WEEBX_URL}" ] && { echo "[!] WeebX URL not found"; exit 1; }
     mkdir -p "${HOME}/toolchains/weebx-clang"
-    wget -q "${WEEBX_URL}" -O /tmp/weebx-clang.tar.gz
+    curl -Lo /tmp/weebx-clang.tar.gz "${WEEBX_URL}"
     tar -xf /tmp/weebx-clang.tar.gz -C "${HOME}/toolchains/weebx-clang" --strip-components=1
     rm /tmp/weebx-clang.tar.gz
     CLANG_BIN="${HOME}/toolchains/weebx-clang/bin"
@@ -54,6 +55,7 @@ case "${CLANG_VARIANT}" in
     tar -tf /tmp/zyc-clang.tar.gz 2>/dev/null | grep -m3 'bin/clang'
     STRIP=0
     BIN_PATH=$(tar -tf /tmp/zyc-clang.tar.gz 2>/dev/null | grep -m1 'bin/clang$')
+    [ -z "$BIN_PATH" ] && { echo "[!] bin/clang not found in ZyC tarball"; exit 1; }
     DEPTH=$(echo "$BIN_PATH" | tr '/' '\n' | wc -l)
     STRIP=$(( DEPTH - 2 ))
     [ "$STRIP" -lt 0 ] && STRIP=0
