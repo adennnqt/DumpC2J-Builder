@@ -233,7 +233,7 @@ print('[+] rekernel.h written')
 "
 
 # Patch binder.c dan signal.c via Python
-python3 << 'RKPY'
+python3 << RKPY
 import sys
 
 KERNEL_DIR = __import__('os').environ.get('KERNEL_DIR', '')
