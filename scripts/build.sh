@@ -236,7 +236,7 @@ print('[+] rekernel.h written')
 python3 << RKPY
 import sys
 
-KERNEL_DIR = __import__('os').environ.get('KERNEL_DIR', '')
+import os; KERNEL_DIR = os.path.join(os.environ.get('GITHUB_WORKSPACE', ''), 'kernel-source')
 
 # === binder.c ===
 bc_path = f"{KERNEL_DIR}/drivers/android/binder.c"
