@@ -163,6 +163,8 @@ jobs:
   build:
     name: "Custom Build"
     runs-on: ubuntu-24.04
+    outputs:
+      lto_actual: ${{ steps.lto_output.outputs.lto_actual }}
 
     steps:
       - name: Checkout Builder
@@ -286,6 +288,10 @@ jobs:
         run: |
           bash builder/scripts/build.sh
 
+      - name: Set LTO Output
+        id: lto_output
+        run: echo "lto_actual=${{ env.LTO_ACTUAL }}" >> "$GITHUB_OUTPUT"
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -325,6 +331,7 @@ jobs:
             **KPM:** ${{ inputs.kpm }}
             **Hardened:** ${{ inputs.hardened }}
             **Clang:** ${{ inputs.clang_variant }}
+            **LTO:** ${{ needs.build.outputs.lto_actual }}
 
             ### Performance Mods
             | Feature | Status |

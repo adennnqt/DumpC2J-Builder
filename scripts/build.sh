@@ -73,6 +73,7 @@ LTO_VAL="$LTO"
 if [ "$KPM" == "on" ] || [ "$ACTUAL_ROOT" == "apatch" ] || [ "$ACTUAL_ROOT" == "folkpatch" ]; then
   LTO_VAL="thin"
 fi
+echo "LTO_ACTUAL=$LTO_VAL" >> "$GITHUB_ENV"
 
 KPM_KEY=""
 if [ "$KPM" == "on" ] || [ "$ACTUAL_ROOT" == "apatch" ] || [ "$ACTUAL_ROOT" == "folkpatch" ]; then
