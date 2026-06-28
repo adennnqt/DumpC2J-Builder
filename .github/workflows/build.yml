@@ -69,6 +69,15 @@ on:
           - "off"
           - "on"
         default: "off"
+      lto:
+        description: "LTO Mode (auto-override ke Thin kalau KPM/APatch/FolkPatch aktif)"
+        required: true
+        type: choice
+        options:
+          - full
+          - thin
+          - none
+        default: full
       hardened:
         description: "Hardened Kernel"
         required: true
@@ -261,6 +270,7 @@ jobs:
           INPUT_VARIANT: ${{ inputs.variant }}
           INPUT_ROOT: ${{ inputs.root }}
           INPUT_KPM: ${{ inputs.kpm }}
+          INPUT_LTO: ${{ inputs.lto }}
           INPUT_HARDENED: ${{ inputs.hardened }}
           INPUT_HTSR: ${{ inputs.htsr }}
           INPUT_WIFI: ${{ inputs.wifi_exploit }}

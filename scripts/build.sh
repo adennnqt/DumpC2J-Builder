@@ -67,7 +67,9 @@ if [ "$KPM" == "on" ] && [ "$ACTUAL_ROOT" == "resukisu" ]; then
   KPM_PATCH="off"
 fi
 
-LTO_VAL="full"
+LTO="${INPUT_LTO:-full}"
+
+LTO_VAL="$LTO"
 if [ "$KPM" == "on" ] || [ "$ACTUAL_ROOT" == "apatch" ] || [ "$ACTUAL_ROOT" == "folkpatch" ]; then
   LTO_VAL="thin"
 fi
