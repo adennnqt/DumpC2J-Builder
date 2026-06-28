@@ -48,7 +48,16 @@ case "${CLANG_VARIANT}" in
     ZYC_URL=$(curl -sL https://raw.githubusercontent.com/ZyCromerZ/Clang/main/Clang-main-link.txt | tr -d '[:space:]')
     echo "[*] ZyC URL: ${ZYC_URL}"
     mkdir -p "${HOME}/toolchains/zyc-clang"
-    curl -L --fail --retry 3 -o /tmp/zyc-clang.tar.gz "${ZYC_URL}"
+    if [ -z "$ZYC_URL" ]; then
+      echo "[-] ZyC: Clang-main-link.txt is empty or unreachable. ZyC may be down."
+      echo "[-] Please choose a different toolchain (neutron/cirrus/azure/weebx/llvm)."
+      exit 1
+    fi
+    curl -L --fail --retry 3 -o /tmp/zyc-clang.tar.gz "${ZYC_URL}" || {
+      echo "[-] ZyC: download failed. Server may be down."
+      echo "[-] Please choose a different toolchain (neutron/cirrus/azure/weebx/llvm)."
+      exit 1
+    }
     echo "[*] ZyC tar structure (first 10):"
     tar -tf /tmp/zyc-clang.tar.gz 2>/dev/null | head -10
     echo "[*] ZyC bin location:"
