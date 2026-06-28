@@ -57,6 +57,16 @@ export KBUILD_BUILD_HOST="DumpC2J"
 
 ACTUAL_ROOT="$ROOT"
 
+# Block known-broken combo: resukisu + susfs
+if [ "$ROOT" == "resukisu" ] && [ "$VARIANT" == "susfs" ]; then
+  echo "[!] WARNING: resukisu + susfs is currently broken (undefined ksu_*_proc_unprivillege symbols)"
+  echo "[!] Falling back to sukisu for susfs variant. Use root variant if you need resukisu."
+  ROOT="sukisu"
+  ROOT_REPO="https://github.com/sukisu-ultra/sukisu-ultra.git"
+  REPO_NAME="sukisu-ultra"
+  BRANCH="main"
+fi
+
 KPM_PATCH="on"
 if [ "$KPM" == "on" ] && [ "$ACTUAL_ROOT" == "resukisu" ]; then
   KPM_PATCH="off"
@@ -309,7 +319,7 @@ if [ "$KPM" == "on" ]; then
 
   if [ "$ROOT" == "apatch" ] || [ "$ROOT" == "folkpatch" ]; then
     if [ "$ROOT" == "folkpatch" ]; then
-      FOLKPATCH_VER=$(curl -s https://api.github.com/repos/LyraVoid/KernelPatch/releases/latest | python3 -c "import json,sys; print(json.load(sys.stdin)['tag_name'])" 2>/dev/null || echo "0.13.1")
+      FOLKPATCH_VER=$(curl -s https://api.github.com/repos/LyraVoid/KernelPatch/releases/latest | python3 -c "import json,sys; print(json.load(sys.stdin)['tag_name'])" 2>/dev/null || curl -s https://api.github.com/repos/LyraVoid/KernelPatch/releases/latest | grep -o '"tag_name": "[^"]*"' | cut -d'"' -f4 2>/dev/null || echo "v0.13.1")
       KPM_RELEASE_BASE="https://github.com/LyraVoid/KernelPatch/releases/download/${FOLKPATCH_VER}"
       KPIMG_NAME="kpimg-android"
     else
@@ -326,11 +336,7 @@ if [ "$KPM" == "on" ]; then
 
   if [ ! -f "$KPTOOLS_BIN" ] || [ ! -f "$KPIMG_BIN" ]; then
     echo "[+] Downloading KPM tools..."
-    if [ "$ROOT" == "folkpatch" ]; then
-      KPTOOLS_URL="${KPM_RELEASE_BASE}/kptools-linux"
-    else
-      KPTOOLS_URL="$KPM_RELEASE_BASE/kptools-linux"
-    fi
+    KPTOOLS_URL="${KPM_RELEASE_BASE}/kptools-linux"
     curl -LSs -o "$KPTOOLS_BIN" "$KPTOOLS_URL" || { echo "[-] Failed to download kptools"; exit 1; }
     curl -LSs -o "$KPIMG_BIN" "$KPM_RELEASE_BASE/$KPIMG_NAME" || { echo "[-] Failed to download kpimg"; exit 1; }
     chmod +x "$KPTOOLS_BIN"
@@ -377,6 +383,10 @@ fi
 export PATH="${CLANG_PATH}:$PATH"
 CLANG_BIN="${CLANG_PATH}/clang"
 # KBUILD_COMPILER_STRING already set by setup_clang.sh
+if [ -z "$COMPILER_VER" ]; then
+  echo "[-] COMPILER_VER is empty — clang setup may have failed!"
+  exit 1
+fi
 echo "[+] Using Clang: $COMPILER_VER"
 
 # ==========================================
@@ -493,7 +503,7 @@ fi
 CMDLINE_APPEND="${CMDLINE_APPEND# }"
 [ -n "$CMDLINE_APPEND" ] && \
   "$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" \
-  --set-str CONFIG_CMDLINE "$CURRENT_CMDLINE$CMDLINE_APPEND"
+  --set-str CONFIG_CMDLINE "${CURRENT_CMDLINE:+$CURRENT_CMDLINE }$CMDLINE_APPEND"
 
 # Droidspaces
 [ "$DROIDSPACES" == "on" ] && \
