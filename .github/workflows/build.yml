@@ -174,7 +174,7 @@ jobs:
 
       - name: Clone Kernel Source
         run: |
-          git clone --depth=1 \
+          git clone --depth=50 \
             --branch main \
             https://${{ secrets.GH_TOKEN }}@github.com/adennnqt/DumpC2J-Kernel \
             kernel-source
@@ -291,6 +291,13 @@ jobs:
       - name: Set LTO Output
         id: lto_output
         run: echo "lto_actual=${{ env.LTO_ACTUAL }}" >> "$GITHUB_OUTPUT"
+
+      - name: Notify Telegram
+        if: success()
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: bash builder/scripts/notify_telegram.sh
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4

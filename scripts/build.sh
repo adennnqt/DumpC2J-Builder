@@ -590,6 +590,7 @@ KVER=$(grep '^VERSION = ' "$KERNEL_DIR/Makefile" | awk '{print $3}')
 KPL=$(grep '^PATCHLEVEL = ' "$KERNEL_DIR/Makefile" | awk '{print $3}')
 KSL=$(grep '^SUBLEVEL = ' "$KERNEL_DIR/Makefile" | awk '{print $3}')
 KERNEL_VER="${KVER}.${KPL}.${KSL}"
+echo "KERNEL_VER=$KERNEL_VER" >> "$GITHUB_ENV"
 
 ZIP_NAME="anykern3-DumpC2J-${KERNEL_VER}-${TIME}.zip"
 cd "$TEMP_DIR" && zip -r9 "${GITHUB_WORKSPACE}/$ZIP_NAME" . \
