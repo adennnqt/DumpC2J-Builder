@@ -302,6 +302,18 @@ RKPY
 
 echo "[+] Re-Kernel integration done!"
 
+# ==========================================
+# TIF_PROC_NON_PRIVILEGE patch (required for ReSukiSU susfs)
+# ==========================================
+THREAD_INFO_H="$KERNEL_DIR/arch/arm64/include/asm/thread_info.h"
+if ! grep -q "TIF_PROC_NON_PRIVILEGE" "$THREAD_INFO_H"; then
+  echo "[*] Patching TIF_PROC_NON_PRIVILEGE into thread_info.h..."
+  sed -i '/#define TIF_SME_VL_INHERIT/a #define TIF_PROC_NON_PRIVILEGE		29	/* ReSukiSU: non-privileged proc flag */' "$THREAD_INFO_H"
+  echo "[+] TIF_PROC_NON_PRIVILEGE added at bit 29"
+else
+  echo "[+] TIF_PROC_NON_PRIVILEGE already present"
+fi
+
 
 
 
