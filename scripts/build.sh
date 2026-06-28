@@ -262,9 +262,9 @@ reply_hook = '\n\t\t/* rekernel reply hook */\n\t\tif (start_rekernel_server() =
 txn_hook = '\n\t\t/* rekernel txn hook */\n\t\tif (start_rekernel_server() == 0) {\n\t\t\tif (target_proc && target_proc->tsk && proc->tsk\n\t\t\t\t&& (task_uid(target_proc->tsk).val > MIN_USERAPP_UID)\n\t\t\t\t&& (proc->pid != target_proc->pid)\n\t\t\t\t&& line_is_frozen(target_proc->tsk)) {\n\t\t\t\tchar binder_kmsg[PACKET_SIZE];\n\t\t\t\tsnprintf(binder_kmsg, sizeof(binder_kmsg), "type=Binder,bindertype=transaction,oneway=%d,from_pid=%d,from=%d,target_pid=%d,target=%d;", tr->flags & TF_ONE_WAY, proc->pid, task_uid(proc->tsk).val, target_proc->pid, task_uid(target_proc->tsk).val);\n\t\t\t\tsend_netlink_message(binder_kmsg, strlen(binder_kmsg));\n\t\t\t}\n\t\t}'
 
 if 'rekernel reply hook' not in bc:
-    anchor = '\t\t\t\tbinder_inner_proc_unlock(target_thread->proc);\n\t\t\t\ttrace_android_vh_binder_reply(target_proc, proc, thread, tr);\n\t\t} else {'
+    anchor = '\t\tbinder_inner_proc_unlock(target_thread->proc);\n\t\ttrace_android_vh_binder_reply(target_proc, proc, thread, tr);\n\t} else {'
     if anchor in bc:
-        bc = bc.replace(anchor, '\t\t\t\tbinder_inner_proc_unlock(target_thread->proc);' + reply_hook + '\n\t\t\t\ttrace_android_vh_binder_reply(target_proc, proc, thread, tr);\n\t\t} else {')
+        bc = bc.replace(anchor, '\t\tbinder_inner_proc_unlock(target_thread->proc);' + reply_hook + '\n\t\ttrace_android_vh_binder_reply(target_proc, proc, thread, tr);\n\t} else {')
         print("[+] binder.c: reply hook injected")
     else:
         print("[-] binder.c: reply anchor NOT FOUND", file=sys.stderr)
