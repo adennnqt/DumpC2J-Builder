@@ -177,6 +177,22 @@ else
         patch -p1 --forward -f --reject-file=- \
         < "$SUSFS_DIR/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch" || true)
     fi
+
+    # Manual Kbuild fixup for hunk #1 failure (ReSukiSU/SukiSU removed legacy hook files)
+    KBUILD_FILE="$MODULES_DIR/$REPO_NAME/kernel/Kbuild"
+    if [ -f "$KBUILD_FILE" ]; then
+      echo "[+] Applying manual Kbuild fixup for SUSFS compatibility..."
+      sed -i '/kernelsu-objs += hook\/lsm_hook\.o/d' "$KBUILD_FILE"
+      sed -i '/kernelsu-objs += hook\/syscall_event_bridge\.o/d' "$KBUILD_FILE"
+      sed -i '/kernelsu-objs += hook\/syscall_hook_manager\.o/d' "$KBUILD_FILE"
+      sed -i '/kernelsu-objs += hook\/tp_marker\.o/d' "$KBUILD_FILE"
+      sed -i '/kernelsu-objs += hook\/arm64\/syscall_hook\.o/d' "$KBUILD_FILE"
+      sed -i '/kernelsu-objs += hook\/x86_64\/syscall_hook\.o/d' "$KBUILD_FILE"
+      sed -i '/kernelsu-objs += infra\/symbol_resolver\.o/d' "$KBUILD_FILE"
+      sed -i '/ifeq.*CONFIG_ARM64/,/endif/{ /hook\/arm64\/patch_memory\.o/d }' "$KBUILD_FILE"
+      sed -i '/ifeq.*CONFIG_X86_64/,/endif/{ /hook\/x86_64\/patch_memory\.o/d }' "$KBUILD_FILE"
+      echo "[+] Kbuild fixup done"
+    fi
   fi
 
   # SukiSU/YukiSU uapi symlink
