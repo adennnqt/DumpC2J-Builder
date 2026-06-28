@@ -303,18 +303,34 @@ RKPY
 echo "[+] Re-Kernel integration done!"
 
 # ==========================================
-# TIF_PROC_NON_PRIVILEGE patch (required for ReSukiSU susfs)
+# ReSukiSU susfs: define proc_unprivillege symbols as non-inline
+# (static inline breaks under LTO with external callers)
 # ==========================================
-THREAD_INFO_H="$KERNEL_DIR/arch/arm64/include/asm/thread_info.h"
-if ! grep -q "TIF_PROC_NON_PRIVILEGE" "$THREAD_INFO_H"; then
-  echo "[*] Patching TIF_PROC_NON_PRIVILEGE into thread_info.h..."
-  sed -i '/#define TIF_SME_VL_INHERIT/a #define TIF_PROC_NON_PRIVILEGE		29	/* ReSukiSU: non-privileged proc flag */' "$THREAD_INFO_H"
-  echo "[+] TIF_PROC_NON_PRIVILEGE added at bit 29"
-else
-  echo "[+] TIF_PROC_NON_PRIVILEGE already present"
+if [ "$ROOT" == "resukisu" ] && [ "$VARIANT" == "susfs" ]; then
+  SUCOMPAT_IMPL="$MODULES_DIR/$REPO_NAME/kernel/feature/sucompat_proc_flag.c"
+  if [ ! -f "$SUCOMPAT_IMPL" ]; then
+    echo "[*] Generating sucompat_proc_flag.c for ReSukiSU susfs LTO fix..."
+    cat > "$SUCOMPAT_IMPL" << 'SCEOF'
+#include <linux/thread_info.h>
+#ifdef CONFIG_64BIT
+#define TIF_PROC_NON_PRIVILEGE 62
+#else
+#define TIF_PROC_NON_PRIVILEGE 30
+#endif
+bool ksu_is_current_proc_unprivillege(void) {
+    return test_thread_flag(TIF_PROC_NON_PRIVILEGE);
+}
+void ksu_set_current_proc_unprivillege(void) {
+    set_thread_flag(TIF_PROC_NON_PRIVILEGE);
+}
+void ksu_clear_current_proc_unprivillege(void) {
+    clear_thread_flag(TIF_PROC_NON_PRIVILEGE);
+}
+SCEOF
+    echo "kernelsu-objs += feature/sucompat_proc_flag.o" >> "$MODULES_DIR/$REPO_NAME/kernel/Kbuild"
+    echo "[+] sucompat_proc_flag.c generated and added to Kbuild"
+  fi
 fi
-
-
 
 
 # ==========================================
