@@ -22,33 +22,45 @@ fi
 
 # Variant label
 case "$INPUT_VARIANT" in
-  stock) VARIANT_LABEL="Stock (No Root)" ;;
-  root)  VARIANT_LABEL="Root only (${ACTUAL_ROOT:-?})" ;;
-  susfs) VARIANT_LABEL="SUSFS + Root (${ACTUAL_ROOT:-?})" ;;
+  stock) VARIANT_LABEL="📦 Stock (No Root)" ;;
+  root)  VARIANT_LABEL="🔓 Root Only » ${ACTUAL_ROOT:-?}" ;;
+  susfs) VARIANT_LABEL="🛡️ SUSFS » ${ACTUAL_ROOT:-?}" ;;
   *)     VARIANT_LABEL="${INPUT_VARIANT:-unknown}" ;;
 esac
 
-# Features
+# KPM
+if [ "${ACTUAL_ROOT:-none}" == "sukisu" ]; then
+  KPM_STATUS="✅ Enabled"
+else
+  KPM_STATUS="❌ Disabled"
+fi
+
+# Features (selalu on, tampilin aja)
 FEAT=""
-[ "${INPUT_BYPASS:-off}" == "on" ]      && FEAT="${FEAT}⚡ Bypass Charging\n"
-[ "${INPUT_NOMOUNT:-off}" == "on" ]     && FEAT="${FEAT}🔒 NoMount (VFS)\n"
-[ "${INPUT_DROIDSPACES:-off}" == "on" ] && FEAT="${FEAT}🤖 Droidspaces\n"
+FEAT="${FEAT}✅ HTSR 240Hz Touch\n"
+FEAT="${FEAT}✅ WiFi Performance Exploits\n"
+FEAT="${FEAT}✅ KGSL GPU Bypass\n"
+FEAT="${FEAT}✅ Mobile Data Exploits\n"
+[ "${INPUT_BYPASS:-off}" == "on" ]      && FEAT="${FEAT}✅ Bypass Charging\n"
+[ "${INPUT_NOMOUNT:-off}" == "on" ]     && FEAT="${FEAT}✅ NoMount (VFS)\n"
+[ "${INPUT_DROIDSPACES:-off}" == "on" ] && FEAT="${FEAT}✅ Droidspaces\n"
 [ "${INPUT_DEBUG:-off}" == "on" ]       && FEAT="${FEAT}🐛 Debug Mode\n"
-[ -z "$FEAT" ] && FEAT="(default)\n"
 
 MESSAGE="🔧 *DumpC2J Kernel Build*
 
-📦 Version: \`${KERNEL_VER}\`
-🌿 Variant: ${VARIANT_LABEL}
-🔢 HZ: ${HZ_ID} | LTO: ${LTO_ACTUAL}
-⚙️ Clang: ${KBUILD_COMPILER_STRING}
+📦 *Version:* \`${KERNEL_VER}\`
+🌿 *Variant:* ${VARIANT_LABEL}
+🔢 *HZ:* ${HZ_ID} Hz
+🔗 *LTO:* ${LTO_ACTUAL}
+🤖 *KPM:* ${KPM_STATUS}
+⚙️ *Clang:* ${KBUILD_COMPILER_STRING}
 
 *Features:*
 $(printf '%b' "$FEAT")
 *Changes:*
 ${CHANGELOG_TEXT}
 
-📁 File: \`${ZIP_NAME}\`"
+📁 \`${ZIP_NAME}\`"
 
 curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
   -d chat_id="${TELEGRAM_CHAT_ID}" \
