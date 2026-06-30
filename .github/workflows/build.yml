@@ -52,12 +52,10 @@ on:
         type: choice
         options:
           - none
-          - ksu
           - ksu-next
           - sukisu
           - resukisu
           - mambosu
-          - folkpatch
         default: resukisu
       lto:
         description: "LTO Mode (auto-override ke Thin kalau FolkPatch aktif)"
@@ -167,7 +165,6 @@ jobs:
             BUILD_NAME="${INPUT_VARIANT}-${ACTUAL_ROOT}-${INPUT_HZ}"
           fi
 
-          [ "$ACTUAL_ROOT" == "folkpatch" ] && BUILD_NAME="${BUILD_NAME}-kpm"
           [ "$INPUT_BYPASS" == "on" ] && BUILD_NAME="${BUILD_NAME}-bypasscharging"
           [ "$INPUT_DROIDSPACES" == "on" ] && BUILD_NAME="${BUILD_NAME}-droidspaces"
           [ "$INPUT_DEBUG" == "on" ] && BUILD_NAME="${BUILD_NAME}-debug"
@@ -209,7 +206,6 @@ jobs:
 
       - name: Build Kernel
         env:
-          KPM_SUPERKEY_SECRET: ${{ secrets.KPM_SUPERKEY }}
           INPUT_HZ: ${{ inputs.hz }}
           INPUT_VARIANT: ${{ inputs.variant }}
           INPUT_ROOT: ${{ inputs.root }}

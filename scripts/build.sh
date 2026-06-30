@@ -21,7 +21,6 @@ VERSION="1.0"
 HZ="${INPUT_HZ:-250}"
 VARIANT="${INPUT_VARIANT:-stock}"
 ROOT="${INPUT_ROOT:-none}"
-KPM_SUPERKEY="${KPM_SUPERKEY_SECRET:-}"
 HARDENED="${INPUT_HARDENED:-off}"
 BYPASSCHARGING="${INPUT_BYPASS:-on}"
 HTSR="${INPUT_HTSR:-on}"
@@ -56,26 +55,11 @@ export KBUILD_BUILD_HOST="DumpC2J"
 
 ACTUAL_ROOT="$ROOT"
 
-# KPM is now exclusively tied to folkpatch (binary patcher)
-KPM_ACTIVE="off"
-[ "$ACTUAL_ROOT" == "folkpatch" ] && KPM_ACTIVE="on"
-
 LTO="${INPUT_LTO:-full}"
 
 LTO_VAL="$LTO"
-if [ "$ACTUAL_ROOT" == "folkpatch" ]; then
-  LTO_VAL="thin"
-fi
 echo "LTO_ACTUAL=$LTO_VAL" >> "$GITHUB_ENV"
 
-KPM_KEY=""
-if [ "$ACTUAL_ROOT" == "folkpatch" ]; then
-  KPM_KEY="$KPM_SUPERKEY"
-  if [ -z "$KPM_KEY" ]; then
-    KPM_KEY=$(tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c 16)
-    echo "[+] Auto-generated KPM SuperKey: $KPM_KEY"
-  fi
-fi
 
 # ==========================================
 # Apply kernel name & spoof uname to defconfig
@@ -105,7 +89,6 @@ case "$ROOT" in
   yukisu)   ROOT_REPO="https://github.com/Anatdx/YukiSU.git"; REPO_NAME="YukiSU"; BRANCH="main" ;;
   resukisu) ROOT_REPO="https://github.com/ReSukiSU/ReSukiSU.git"; REPO_NAME="ReSukiSU"; BRANCH="main" ;;
   mambosu)  ROOT_REPO="https://github.com/RapliVx/KernelSU.git"; REPO_NAME="MamboSU"; BRANCH="master" ;;
-  folkpatch) REPO_NAME="FolkPatch" ;;
   ksu-next) ROOT_REPO="https://github.com/KernelSU-Next/KernelSU-Next.git"; REPO_NAME="KernelSU-Next"; BRANCH="dev" ;;
   *)        REPO_NAME="none" ;;
 esac
@@ -116,11 +99,6 @@ esac
 rm -rf "$KERNEL_DIR/drivers/kernelsu"
 
 if [ "$VARIANT" == "stock" ]; then
-  mkdir -p "$KERNEL_DIR/drivers/kernelsu"
-  touch "$KERNEL_DIR/drivers/kernelsu/Kconfig"
-  touch "$KERNEL_DIR/drivers/kernelsu/Makefile"
-elif [ "$ROOT" == "folkpatch" ]; then
-  echo "[+] Using $REPO_NAME (binary patcher) — creating dummy KernelSU module"
   mkdir -p "$KERNEL_DIR/drivers/kernelsu"
   touch "$KERNEL_DIR/drivers/kernelsu/Kconfig"
   touch "$KERNEL_DIR/drivers/kernelsu/Makefile"
@@ -305,27 +283,6 @@ SCEOF
 fi
 
 
-# ==========================================
-# KPM Tools (folkpatch only)
-# ==========================================
-if [ "$KPM_ACTIVE" == "on" ]; then
-  KPM_TOOLS_DIR="$MODULES_DIR/kpm_tools"
-  mkdir -p "$KPM_TOOLS_DIR"
-
-  FOLKPATCH_VER=$(curl -s https://api.github.com/repos/LyraVoid/KernelPatch/releases/latest | python3 -c "import json,sys; print(json.load(sys.stdin)['tag_name'])" 2>/dev/null || curl -s https://api.github.com/repos/LyraVoid/KernelPatch/releases/latest | grep -o '"tag_name": "[^"]*"' | cut -d'"' -f4 2>/dev/null || echo "v0.13.1")
-  KPM_RELEASE_BASE="https://github.com/LyraVoid/KernelPatch/releases/download/${FOLKPATCH_VER}"
-  KPIMG_NAME="kpimg-android"
-
-  KPTOOLS_BIN="$KPM_TOOLS_DIR/kptools-linux"
-  KPIMG_BIN="$KPM_TOOLS_DIR/$KPIMG_NAME"
-
-  if [ ! -f "$KPTOOLS_BIN" ] || [ ! -f "$KPIMG_BIN" ]; then
-    echo "[+] Downloading KPM tools..."
-    KPTOOLS_URL="${KPM_RELEASE_BASE}/kptools-linux"
-    curl -LSs -o "$KPTOOLS_BIN" "$KPTOOLS_URL" || { echo "[-] Failed to download kptools"; exit 1; }
-    curl -LSs -o "$KPIMG_BIN" "$KPM_RELEASE_BASE/$KPIMG_NAME" || { echo "[-] Failed to download kpimg"; exit 1; }
-    chmod +x "$KPTOOLS_BIN"
-  fi
 fi
 
 # ==========================================
@@ -396,13 +353,8 @@ case "$VARIANT" in
     -e CONFIG_KSU -e CONFIG_KSU_SUSFS -e CONFIG_KSU_SUSFS_SUS_MAP ;;
 esac
 
-# KPM config (folkpatch only)
-if [ "$ROOT" == "folkpatch" ]; then
-  "$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" \
-    -d CONFIG_KSU -e CONFIG_KPM -e CONFIG_KALLSYMS -e CONFIG_KALLSYMS_ALL
-else
-  "$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" -d CONFIG_KPM
-fi
+# KPM disabled
+"$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" -d CONFIG_KPM
 
 # HZ config
 case "$HZ_ID" in
@@ -508,18 +460,6 @@ make -C "$KERNEL_DIR" \
   KCFLAGS="$KERNEL_KCFLAGS" LDFLAGS="$KERNEL_LDFLAGS" \
   || { echo "[-] Build failed!"; exit 1; }
 
-# ==========================================
-# KPM Post-Build (folkpatch only)
-# ==========================================
-if [ "$KPM_ACTIVE" == "on" ]; then
-  RAW_IMAGE="$ZIMAGE_DIR/Image"
-  [ ! -f "$RAW_IMAGE" ] && [ -f "$ZIMAGE_DIR/Image.gz" ] && gzip -dk "$ZIMAGE_DIR/Image.gz"
-  cp "$RAW_IMAGE" "${RAW_IMAGE}.orig"
-  "$KPTOOLS_BIN" -p -i "${RAW_IMAGE}.orig" -S "$KPM_KEY" -k "$KPIMG_BIN" -o "$RAW_IMAGE"
-  rm -f "${RAW_IMAGE}.orig"
-  [ -f "$ZIMAGE_DIR/Image.gz" ] && gzip -nkf "$RAW_IMAGE"
-  echo "[+] KPM patching done. SuperKey: $KPM_KEY"
-fi
 
 # ==========================================
 # Verify image exists
@@ -558,7 +498,6 @@ mkdir -p "$KERNEL_DIR/DumpC2J-Release"
 cp "$ZIP_NAME" "$KERNEL_DIR/DumpC2J-Release/"
 
 echo "ZIP_NAME=$ZIP_NAME" >> "$GITHUB_ENV"
-[ "$KPM_ACTIVE" == "on" ] && echo "KPM_SUPERKEY=$KPM_KEY" >> "$GITHUB_ENV"
 
 BUILD_END=$(date +"%s")
 DIFF=$((BUILD_END - BUILD_START))
