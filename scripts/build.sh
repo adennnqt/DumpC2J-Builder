@@ -114,7 +114,12 @@ else
   # SUSFS
   if [ "$VARIANT" == "susfs" ]; then
     if [ "$ROOT" == "mambosu" ]; then
-      echo "[!] MamboSU: SUSFS not supported, skipping SUSFS injection."
+      echo "[!] MamboSU: SUSFS not supported, skipping patch. Copying headers only..."
+      cp "$SUSFS_DIR/kernel_patches/include/linux/susfs.h" "$KERNEL_DIR/include/linux/susfs.h"
+      [ -f "$SUSFS_DIR/kernel_patches/include/linux/susfs_def.h" ] && \
+        cp "$SUSFS_DIR/kernel_patches/include/linux/susfs_def.h" "$KERNEL_DIR/include/linux/susfs_def.h"
+      [ -f "$SUSFS_DIR/kernel_patches/fs/susfs.c" ] && \
+        cp "$SUSFS_DIR/kernel_patches/fs/susfs.c" "$KERNEL_DIR/fs/susfs.c"
     else
     SUSFS_DIR="$MODULES_DIR/susfs4ksu"
     if [ ! -d "$SUSFS_DIR" ]; then
