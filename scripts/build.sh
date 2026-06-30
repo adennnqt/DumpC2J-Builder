@@ -159,7 +159,7 @@ else
 fi
 
 # SUSFS fixup
-if [ "$VARIANT" == "susfs" ]; then
+if [ "$VARIANT" == "susfs" ] && [ "$ROOT" != "mambosu" ]; then
   echo "[+] Running SUSFS fixup..."
   bash "$KERNEL_DIR/ksu_susfs_fixup.sh" "$KERNEL_DIR/drivers/kernelsu" "$ROOT"
 fi
@@ -401,6 +401,12 @@ case "$LTO_VAL" in
   *)    "$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" \
     -d CONFIG_LTO_NONE -d CONFIG_LTO_CLANG_FULL -e CONFIG_LTO_CLANG -e CONFIG_LTO_CLANG_THIN ;;
 esac
+
+# KALLSYMS_ALL for ZygiskNext/LSPosed (mambosu)
+if [ "$ROOT" == "mambosu" ]; then
+  "$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" \
+    -e CONFIG_KALLSYMS_ALL
+fi
 
 # Debug reduction
 "$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" \
