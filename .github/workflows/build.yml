@@ -92,38 +92,6 @@ on:
           - "off"
           - "on"
         default: "off"
-      htsr:
-        description: "HTSR 240Hz Touch Sampling"
-        required: true
-        type: choice
-        options:
-          - "off"
-          - "on"
-        default: "on"
-      wifi_exploit:
-        description: "WiFi Performance Exploits (WLM, Coex, BBR)"
-        required: true
-        type: choice
-        options:
-          - "off"
-          - "on"
-        default: "on"
-      kgsl_exploit:
-        description: "KGSL GPU Bypass (LM_LIMIT, DCVS)"
-        required: true
-        type: choice
-        options:
-          - "off"
-          - "on"
-        default: "on"
-      data_exploit:
-        description: "Mobile Data Exploits (DFC, Powersave)"
-        required: true
-        type: choice
-        options:
-          - "off"
-          - "on"
-        default: "on"
       kernel_version_spoof:
         description: "Spoof Kernel Version (kosongkan = pakai upstream)"
         required: false
@@ -179,10 +147,10 @@ jobs:
           INPUT_HARDENED: "off"
           INPUT_BYPASS: ${{ inputs.bypasscharging }}
           INPUT_DROIDSPACES: ${{ inputs.droidspaces }}
-          INPUT_HTSR: ${{ inputs.htsr }}
-          INPUT_WIFI: ${{ inputs.wifi_exploit }}
-          INPUT_KGSL: ${{ inputs.kgsl_exploit }}
-          INPUT_DATA: ${{ inputs.data_exploit }}
+          INPUT_HTSR: "on"
+          INPUT_WIFI: "on"
+          INPUT_KGSL: "on"
+          INPUT_DATA: "on"
           INPUT_DEBUG: ${{ inputs.debug }}
           INPUT_KERNEL_NAME: ${{ inputs.kernel_name }}
           INPUT_SPOOF_UNAME: ${{ inputs.spoof_uname }}
@@ -213,10 +181,6 @@ jobs:
           fi
           [ "$INPUT_BYPASS" == "on" ] && BUILD_NAME="${BUILD_NAME}-bypasscharging"
           [ "$INPUT_DROIDSPACES" == "on" ] && BUILD_NAME="${BUILD_NAME}-droidspaces"
-          [ "$INPUT_HTSR" == "off" ] && BUILD_NAME="${BUILD_NAME}-nohtsr"
-          [ "$INPUT_WIFI" == "off" ] && BUILD_NAME="${BUILD_NAME}-nowifi"
-          [ "$INPUT_KGSL" == "off" ] && BUILD_NAME="${BUILD_NAME}-nokgsl"
-          [ "$INPUT_DATA" == "off" ] && BUILD_NAME="${BUILD_NAME}-nodata"
           [ "$INPUT_DEBUG" == "on" ] && BUILD_NAME="${BUILD_NAME}-debug"
           [ "$INPUT_NOMOUNT" == "on" ] && BUILD_NAME="${BUILD_NAME}-nomount"
 
@@ -263,10 +227,10 @@ jobs:
           INPUT_KPM: ${{ inputs.kpm }}
           INPUT_LTO: ${{ inputs.lto }}
           INPUT_HARDENED: "off"
-          INPUT_HTSR: ${{ inputs.htsr }}
-          INPUT_WIFI: ${{ inputs.wifi_exploit }}
-          INPUT_KGSL: ${{ inputs.kgsl_exploit }}
-          INPUT_DATA: ${{ inputs.data_exploit }}
+          INPUT_HTSR: "on"
+          INPUT_WIFI: "on"
+          INPUT_KGSL: "on"
+          INPUT_DATA: "on"
           INPUT_BYPASS: ${{ inputs.bypasscharging }}
           INPUT_DROIDSPACES: ${{ inputs.droidspaces }}
           INPUT_DEBUG: ${{ inputs.debug }}
@@ -333,10 +297,6 @@ jobs:
             |---------|--------|
             | Bypass Charging | ${{ inputs.bypasscharging }} |
             | Droidspaces | ${{ inputs.droidspaces }} |
-            | HTSR 240Hz Touch | ${{ inputs.htsr }} |
-            | WiFi Exploits | ${{ inputs.wifi_exploit }} |
-            | KGSL GPU Bypass | ${{ inputs.kgsl_exploit }} |
-            | Data Exploits | ${{ inputs.data_exploit }} |
             | Debug Mode | ${{ inputs.debug }} |
             | NoMount | ${{ inputs.nomount }} |
 
