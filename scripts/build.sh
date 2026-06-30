@@ -138,7 +138,7 @@ else
 #include <asm\/current.h>' "$SUSFS_DEF_H"
     fi
 
-    if grep -q "config KSU_SUSFS" "$MODULES_DIR/$REPO_NAME/kernel/Kconfig" 2>/dev/null; then
+    if grep -q "KSU_SUSFS" "$MODULES_DIR/$REPO_NAME/kernel/Kconfig" 2>/dev/null || [ "$ROOT" == "sukisu" ] || [ "$ROOT" == "resukisu" ]; then
       echo "[+] $REPO_NAME already has native SUSFS integration. Skipping patch..."
     else
       echo "[+] Patching $REPO_NAME for SUSFS..."
@@ -354,8 +354,12 @@ case "$VARIANT" in
     -e CONFIG_KSU -e CONFIG_KSU_SUSFS -e CONFIG_KSU_SUSFS_SUS_MAP ;;
 esac
 
-# KPM disabled
-"$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" -d CONFIG_KPM
+# KPM: enable for sukisu/folkpatch only
+if [ "$ROOT" == "sukisu" ] || [ "$ROOT" == "folkpatch" ]; then
+  "$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" -e CONFIG_KPM
+else
+  "$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" -d CONFIG_KPM
+fi
 
 # HZ config
 case "$HZ_ID" in
