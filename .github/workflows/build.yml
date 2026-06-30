@@ -58,7 +58,7 @@ on:
           - mambosu
         default: resukisu
       lto:
-        description: "LTO Mode (auto-override ke Thin kalau FolkPatch aktif)"
+        description: "LTO Mode"
         required: true
         type: choice
         options:

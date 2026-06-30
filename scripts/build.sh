@@ -54,6 +54,7 @@ export KBUILD_BUILD_HOST="DumpC2J"
 [ "$VARIANT" == "stock" ] && ROOT="none"
 
 ACTUAL_ROOT="$ROOT"
+echo "ACTUAL_ROOT=$ACTUAL_ROOT" >> "$GITHUB_ENV"
 
 LTO="${INPUT_LTO:-full}"
 
@@ -84,9 +85,7 @@ fi
 # Resolve Root
 # ==========================================
 case "$ROOT" in
-  ksu)      ROOT_REPO="https://github.com/tiann/KernelSU.git"; REPO_NAME="KernelSU"; BRANCH="main" ;;
   sukisu)   ROOT_REPO="https://github.com/sukisu-ultra/sukisu-ultra.git"; REPO_NAME="sukisu-ultra"; BRANCH="main" ;;
-  yukisu)   ROOT_REPO="https://github.com/Anatdx/YukiSU.git"; REPO_NAME="YukiSU"; BRANCH="main" ;;
   resukisu) ROOT_REPO="https://github.com/ReSukiSU/ReSukiSU.git"; REPO_NAME="ReSukiSU"; BRANCH="main" ;;
   mambosu)  ROOT_REPO="https://github.com/RapliVx/KernelSU.git"; REPO_NAME="MamboSU"; BRANCH="master" ;;
   ksu-next) ROOT_REPO="https://github.com/KernelSU-Next/KernelSU-Next.git"; REPO_NAME="KernelSU-Next"; BRANCH="dev" ;;
