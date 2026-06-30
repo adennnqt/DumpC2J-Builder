@@ -20,15 +20,35 @@ else
   CHANGELOG_TEXT=$(echo "$CHANGELOG" | sed 's/^/- /')
 fi
 
-MESSAGE="🔧 *DumpC2J Kernel Build*
-Version: \`${KERNEL_VER}\`
-Variant: ${ACTUAL_ROOT:-stock} | HZ: ${HZ_ID} | LTO: ${LTO_ACTUAL}
-Clang: ${KBUILD_COMPILER_STRING}
+# Variant label
+case "$INPUT_VARIANT" in
+  stock) VARIANT_LABEL="Stock (No Root)" ;;
+  root)  VARIANT_LABEL="Root only (${ACTUAL_ROOT:-?})" ;;
+  susfs) VARIANT_LABEL="SUSFS + Root (${ACTUAL_ROOT:-?})" ;;
+  *)     VARIANT_LABEL="${INPUT_VARIANT:-unknown}" ;;
+esac
 
+# Features
+FEAT=""
+[ "${INPUT_BYPASS:-off}" == "on" ]      && FEAT="${FEAT}⚡ Bypass Charging\n"
+[ "${INPUT_NOMOUNT:-off}" == "on" ]     && FEAT="${FEAT}🔒 NoMount (VFS)\n"
+[ "${INPUT_DROIDSPACES:-off}" == "on" ] && FEAT="${FEAT}🤖 Droidspaces\n"
+[ "${INPUT_DEBUG:-off}" == "on" ]       && FEAT="${FEAT}🐛 Debug Mode\n"
+[ -z "$FEAT" ] && FEAT="(default)\n"
+
+MESSAGE="🔧 *DumpC2J Kernel Build*
+
+📦 Version: \`${KERNEL_VER}\`
+🌿 Variant: ${VARIANT_LABEL}
+🔢 HZ: ${HZ_ID} | LTO: ${LTO_ACTUAL}
+⚙️ Clang: ${KBUILD_COMPILER_STRING}
+
+*Features:*
+$(printf '%b' "$FEAT")
 *Changes:*
 ${CHANGELOG_TEXT}
 
-📦 File: \`${ZIP_NAME}\`"
+📁 File: \`${ZIP_NAME}\`"
 
 curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
   -d chat_id="${TELEGRAM_CHAT_ID}" \
