@@ -21,7 +21,6 @@ VERSION="1.0"
 HZ="${INPUT_HZ:-250}"
 VARIANT="${INPUT_VARIANT:-stock}"
 ROOT="${INPUT_ROOT:-none}"
-KPM="${INPUT_KPM:-off}"
 KPM_SUPERKEY="${KPM_SUPERKEY_SECRET:-}"
 HARDENED="${INPUT_HARDENED:-off}"
 BYPASSCHARGING="${INPUT_BYPASS:-on}"
@@ -57,26 +56,20 @@ export KBUILD_BUILD_HOST="DumpC2J"
 
 ACTUAL_ROOT="$ROOT"
 
-# resukisu + susfs debug mode (no fallback)
-if [ "$ROOT" == "resukisu" ] && [ "$VARIANT" == "susfs" ]; then
-  echo "[*] resukisu + susfs: proceeding without fallback for debug..."
-fi
-
-KPM_PATCH="on"
-if [ "$KPM" == "on" ] && [ "$ACTUAL_ROOT" == "resukisu" ]; then
-  KPM_PATCH="off"
-fi
+# KPM is now exclusively tied to folkpatch (binary patcher)
+KPM_ACTIVE="off"
+[ "$ACTUAL_ROOT" == "folkpatch" ] && KPM_ACTIVE="on"
 
 LTO="${INPUT_LTO:-full}"
 
 LTO_VAL="$LTO"
-if [ "$KPM" == "on" ] || [ "$ACTUAL_ROOT" == "apatch" ] || [ "$ACTUAL_ROOT" == "folkpatch" ]; then
+if [ "$ACTUAL_ROOT" == "folkpatch" ]; then
   LTO_VAL="thin"
 fi
 echo "LTO_ACTUAL=$LTO_VAL" >> "$GITHUB_ENV"
 
 KPM_KEY=""
-if [ "$KPM" == "on" ] || [ "$ACTUAL_ROOT" == "apatch" ] || [ "$ACTUAL_ROOT" == "folkpatch" ]; then
+if [ "$ACTUAL_ROOT" == "folkpatch" ]; then
   KPM_KEY="$KPM_SUPERKEY"
   if [ -z "$KPM_KEY" ]; then
     KPM_KEY=$(tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c 16)
@@ -112,7 +105,6 @@ case "$ROOT" in
   yukisu)   ROOT_REPO="https://github.com/Anatdx/YukiSU.git"; REPO_NAME="YukiSU"; BRANCH="main" ;;
   resukisu) ROOT_REPO="https://github.com/ReSukiSU/ReSukiSU.git"; REPO_NAME="ReSukiSU"; BRANCH="main" ;;
   mambosu)  ROOT_REPO="https://github.com/RapliVx/KernelSU.git"; REPO_NAME="MamboSU"; BRANCH="master" ;;
-  apatch)   REPO_NAME="APatch" ;;
   folkpatch) REPO_NAME="FolkPatch" ;;
   ksu-next) ROOT_REPO="https://github.com/KernelSU-Next/KernelSU-Next.git"; REPO_NAME="KernelSU-Next"; BRANCH="dev" ;;
   *)        REPO_NAME="none" ;;
@@ -127,12 +119,11 @@ if [ "$VARIANT" == "stock" ]; then
   mkdir -p "$KERNEL_DIR/drivers/kernelsu"
   touch "$KERNEL_DIR/drivers/kernelsu/Kconfig"
   touch "$KERNEL_DIR/drivers/kernelsu/Makefile"
-elif [ "$ROOT" == "apatch" ] || [ "$ROOT" == "folkpatch" ]; then
+elif [ "$ROOT" == "folkpatch" ]; then
   echo "[+] Using $REPO_NAME (binary patcher) — creating dummy KernelSU module"
   mkdir -p "$KERNEL_DIR/drivers/kernelsu"
   touch "$KERNEL_DIR/drivers/kernelsu/Kconfig"
   touch "$KERNEL_DIR/drivers/kernelsu/Makefile"
-  KPM="on"
 else
   mkdir -p "$MODULES_DIR"
   if [ ! -d "$MODULES_DIR/$REPO_NAME" ]; then
@@ -180,28 +171,6 @@ else
   # SukiSU/YukiSU uapi symlink
   if [ ! -d "$MODULES_DIR/$REPO_NAME/kernel/uapi" ] && [ -d "$MODULES_DIR/$REPO_NAME/uapi" ]; then
     ln -sfn ../uapi "$MODULES_DIR/$REPO_NAME/kernel/uapi"
-  fi
-
-  # SukiSU/YukiSU KPM header fixes
-  if { [ "$ROOT" == "sukisu" ] || [ "$ROOT" == "yukisu" ]; } && [ "$KPM" == "on" ]; then
-    KPM_HEADER="$MODULES_DIR/$REPO_NAME/kernel/kpm/kpm.h"
-    KPM_COMPACT="$MODULES_DIR/$REPO_NAME/kernel/kpm/compact.c"
-    SUPERCALL_UAPI="$MODULES_DIR/$REPO_NAME/uapi/supercall.h"
-    ALLOWLIST_H="$MODULES_DIR/$REPO_NAME/kernel/policy/allowlist.h"
-    KSU_KBUILD="$MODULES_DIR/$REPO_NAME/kernel/Kbuild"
-
-    [ -f "$KPM_HEADER" ] && grep -q '#include "uapi/supercall.h"' "$KPM_HEADER" && \
-      sed -i 's|#include "uapi/supercall.h"|#include "../../uapi/supercall.h"|' "$KPM_HEADER"
-    [ -f "$SUPERCALL_UAPI" ] && grep -q '#include "uapi/app_profile.h"' "$SUPERCALL_UAPI" && \
-      sed -i 's|#include "uapi/app_profile.h"|#include "app_profile.h"|' "$SUPERCALL_UAPI"
-    [ -f "$KPM_COMPACT" ] && grep -q '#include "policy/allowlist.h"' "$KPM_COMPACT" && \
-      sed -i 's|#include "policy/allowlist.h"|#include "../policy/allowlist.h"|' "$KPM_COMPACT"
-    [ -f "$KPM_COMPACT" ] && grep -q '#include "manager/manager_identity.h"' "$KPM_COMPACT" && \
-      sed -i 's|#include "manager/manager_identity.h"|#include "../manager/manager_identity.h"|' "$KPM_COMPACT"
-    [ -f "$ALLOWLIST_H" ] && grep -q '#include "uapi/app_profile.h"' "$ALLOWLIST_H" && \
-      sed -i 's|#include "uapi/app_profile.h"|#include "../uapi/app_profile.h"|' "$ALLOWLIST_H"
-    [ -f "$KSU_KBUILD" ] && ! grep -q '\-I$(KSU_KERNEL_DIR)/\.\.' "$KSU_KBUILD" && \
-      sed -i 's|ccflags-y += -I$(KSU_KERNEL_DIR) -I$(KSU_KERNEL_DIR)/include|ccflags-y += -I$(KSU_KERNEL_DIR) -I$(KSU_KERNEL_DIR)/include -I$(KSU_KERNEL_DIR)/..|' "$KSU_KBUILD"
   fi
 
   echo "[+] Symlinking $REPO_NAME to drivers/kernelsu..."
@@ -337,25 +306,15 @@ fi
 
 
 # ==========================================
-# KPM Tools
+# KPM Tools (folkpatch only)
 # ==========================================
-if [ "$KPM" == "on" ]; then
+if [ "$KPM_ACTIVE" == "on" ]; then
   KPM_TOOLS_DIR="$MODULES_DIR/kpm_tools"
   mkdir -p "$KPM_TOOLS_DIR"
 
-  if [ "$ROOT" == "apatch" ] || [ "$ROOT" == "folkpatch" ]; then
-    if [ "$ROOT" == "folkpatch" ]; then
-      FOLKPATCH_VER=$(curl -s https://api.github.com/repos/LyraVoid/KernelPatch/releases/latest | python3 -c "import json,sys; print(json.load(sys.stdin)['tag_name'])" 2>/dev/null || curl -s https://api.github.com/repos/LyraVoid/KernelPatch/releases/latest | grep -o '"tag_name": "[^"]*"' | cut -d'"' -f4 2>/dev/null || echo "v0.13.1")
-      KPM_RELEASE_BASE="https://github.com/LyraVoid/KernelPatch/releases/download/${FOLKPATCH_VER}"
-      KPIMG_NAME="kpimg-android"
-    else
-      KPM_RELEASE_BASE="https://github.com/bmax121/KernelPatch/releases/latest/download"
-      KPIMG_NAME="kpimg-android"
-    fi
-  else
-    KPM_RELEASE_BASE="https://github.com/SukiSU-Ultra/SukiSU_KernelPatch_patch/releases/latest/download"
-    KPIMG_NAME="kpimg"
-  fi
+  FOLKPATCH_VER=$(curl -s https://api.github.com/repos/LyraVoid/KernelPatch/releases/latest | python3 -c "import json,sys; print(json.load(sys.stdin)['tag_name'])" 2>/dev/null || curl -s https://api.github.com/repos/LyraVoid/KernelPatch/releases/latest | grep -o '"tag_name": "[^"]*"' | cut -d'"' -f4 2>/dev/null || echo "v0.13.1")
+  KPM_RELEASE_BASE="https://github.com/LyraVoid/KernelPatch/releases/download/${FOLKPATCH_VER}"
+  KPIMG_NAME="kpimg-android"
 
   KPTOOLS_BIN="$KPM_TOOLS_DIR/kptools-linux"
   KPIMG_BIN="$KPM_TOOLS_DIR/$KPIMG_NAME"
@@ -437,13 +396,10 @@ case "$VARIANT" in
     -e CONFIG_KSU -e CONFIG_KSU_SUSFS -e CONFIG_KSU_SUSFS_SUS_MAP ;;
 esac
 
-# KPM config
-if [ "$ROOT" == "apatch" ] || [ "$ROOT" == "folkpatch" ]; then
+# KPM config (folkpatch only)
+if [ "$ROOT" == "folkpatch" ]; then
   "$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" \
     -d CONFIG_KSU -e CONFIG_KPM -e CONFIG_KALLSYMS -e CONFIG_KALLSYMS_ALL
-elif [ "$KPM" == "on" ]; then
-  "$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" \
-    -e CONFIG_KPM -e CONFIG_KALLSYMS -e CONFIG_KALLSYMS_ALL
 else
   "$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" -d CONFIG_KPM
 fi
@@ -553,9 +509,9 @@ make -C "$KERNEL_DIR" \
   || { echo "[-] Build failed!"; exit 1; }
 
 # ==========================================
-# KPM Post-Build
+# KPM Post-Build (folkpatch only)
 # ==========================================
-if [ "$KPM" == "on" ] && [ "$KPM_PATCH" == "on" ]; then
+if [ "$KPM_ACTIVE" == "on" ]; then
   RAW_IMAGE="$ZIMAGE_DIR/Image"
   [ ! -f "$RAW_IMAGE" ] && [ -f "$ZIMAGE_DIR/Image.gz" ] && gzip -dk "$ZIMAGE_DIR/Image.gz"
   cp "$RAW_IMAGE" "${RAW_IMAGE}.orig"
@@ -602,7 +558,7 @@ mkdir -p "$KERNEL_DIR/DumpC2J-Release"
 cp "$ZIP_NAME" "$KERNEL_DIR/DumpC2J-Release/"
 
 echo "ZIP_NAME=$ZIP_NAME" >> "$GITHUB_ENV"
-[ "$KPM" == "on" ] && echo "KPM_SUPERKEY=$KPM_KEY" >> "$GITHUB_ENV"
+[ "$KPM_ACTIVE" == "on" ] && echo "KPM_SUPERKEY=$KPM_KEY" >> "$GITHUB_ENV"
 
 BUILD_END=$(date +"%s")
 DIFF=$((BUILD_END - BUILD_START))

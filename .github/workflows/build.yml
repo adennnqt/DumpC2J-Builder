@@ -59,16 +59,8 @@ on:
           - mambosu
           - folkpatch
         default: resukisu
-      kpm:
-        description: "Kernel Patch Module (KPM)"
-        required: true
-        type: choice
-        options:
-          - "off"
-          - "on"
-        default: "off"
       lto:
-        description: "LTO Mode (auto-override ke Thin kalau KPM/APatch/FolkPatch aktif)"
+        description: "LTO Mode (auto-override ke Thin kalau FolkPatch aktif)"
         required: true
         type: choice
         options:
@@ -143,7 +135,6 @@ jobs:
           INPUT_HZ: ${{ inputs.hz }}
           INPUT_VARIANT: ${{ inputs.variant }}
           INPUT_ROOT: ${{ inputs.root }}
-          INPUT_KPM: ${{ inputs.kpm }}
           INPUT_HARDENED: "off"
           INPUT_BYPASS: ${{ inputs.bypasscharging }}
           INPUT_DROIDSPACES: ${{ inputs.droidspaces }}
@@ -176,9 +167,7 @@ jobs:
             BUILD_NAME="${INPUT_VARIANT}-${ACTUAL_ROOT}-${INPUT_HZ}"
           fi
 
-          if [ "$INPUT_KPM" == "on" ] || [ "$ACTUAL_ROOT" == "folkpatch" ]; then
-            BUILD_NAME="${BUILD_NAME}-kpm"
-          fi
+          [ "$ACTUAL_ROOT" == "folkpatch" ] && BUILD_NAME="${BUILD_NAME}-kpm"
           [ "$INPUT_BYPASS" == "on" ] && BUILD_NAME="${BUILD_NAME}-bypasscharging"
           [ "$INPUT_DROIDSPACES" == "on" ] && BUILD_NAME="${BUILD_NAME}-droidspaces"
           [ "$INPUT_DEBUG" == "on" ] && BUILD_NAME="${BUILD_NAME}-debug"
@@ -224,7 +213,6 @@ jobs:
           INPUT_HZ: ${{ inputs.hz }}
           INPUT_VARIANT: ${{ inputs.variant }}
           INPUT_ROOT: ${{ inputs.root }}
-          INPUT_KPM: ${{ inputs.kpm }}
           INPUT_LTO: ${{ inputs.lto }}
           INPUT_HARDENED: "off"
           INPUT_HTSR: "on"
@@ -288,7 +276,6 @@ jobs:
             **Variant:** ${{ inputs.variant }}
             **HZ:** ${{ inputs.hz }}
             **Root:** ${{ inputs.root }}
-            **KPM:** ${{ inputs.kpm }}
             **Clang:** ${{ inputs.clang_variant }}
             **LTO:** ${{ needs.build.outputs.lto_actual }}
 
