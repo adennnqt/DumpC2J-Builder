@@ -95,10 +95,15 @@ jobs:
 
       - name: Create Swap
         run: |
-          sudo fallocate -l 8G /swapfile
-          sudo chmod 600 /swapfile
-          sudo mkswap /swapfile
-          sudo swapon /swapfile
+          SWAPFILE="/mnt/build_swapfile"
+          while true; do
+            if sudo fallocate -l 8G $SWAPFILE || sudo dd if=/dev/zero of=$SWAPFILE bs=1M count=8192 status=progress; then
+              break
+            else
+              sleep 5
+            fi
+          done
+          sudo chmod 600 $SWAPFILE && sudo mkswap $SWAPFILE && sudo swapon $SWAPFILE
 
       - name: Setup Build Environment
         run: |
