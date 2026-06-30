@@ -354,7 +354,7 @@ case "$VARIANT" in
     -e CONFIG_KSU -e CONFIG_KSU_SUSFS -e CONFIG_KSU_SUSFS_SUS_MAP ;;
 esac
 
-# KPM: enable for sukisu/folkpatch only
+# KPM: enable for sukisu only
 if [ "$ROOT" == "sukisu" ]; then
   "$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" -e CONFIG_KPM
 else
