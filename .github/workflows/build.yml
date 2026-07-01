@@ -114,6 +114,18 @@ jobs:
       lto_actual: ${{ steps.lto_output.outputs.lto_actual }}
 
     steps:
+      - name: Validate Input Combination
+        run: |
+          if [ "${{ inputs.variant }}" == "susfs" ] && [ "${{ inputs.root }}" == "sukisu" ]; then
+            echo "::error::SukiSU-Ultra + SUSFS is currently unsupported (linker conflicts with susfs4ksu). Use variant=root instead."
+            exit 1
+          fi
+          if [ "${{ inputs.variant }}" == "root" ] && [ "${{ inputs.root }}" == "resukisu" ]; then
+            echo "::error::ReSukiSU requires SUSFS — root-only mode is not supported. Use variant=susfs instead."
+            exit 1
+          fi
+          echo "[+] Input combination valid: variant=${{ inputs.variant }}, root=${{ inputs.root }}"
+
       - name: Checkout Builder
         uses: actions/checkout@v4
         with:
