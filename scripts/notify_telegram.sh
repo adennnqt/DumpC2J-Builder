@@ -14,9 +14,9 @@ else
   RAW_LOG=$(git log -10 --no-merges --pretty=format:"%s" | grep -vi '\[ci\]' || true)
 fi
 
-declare -A GROUPS
-ORDER=(added fixed changed)
-declare -A LABELS=(
+declare -A CL_GROUPS
+CL_ORDER=(added fixed changed)
+declare -A CL_LABELS=(
   [added]="Added"
   [fixed]="Fixed"
   [changed]="Changed"
@@ -34,13 +34,13 @@ while IFS= read -r line; do
     fix)  key="fixed" ;;
     *)    key="changed" ;;
   esac
-  GROUPS[$key]="${GROUPS[$key]}• ${desc}\n"
+  CL_GROUPS[$key]="${CL_GROUPS[$key]}• ${desc}\n"
 done <<< "$RAW_LOG"
 
 CHANGELOG_TEXT=""
-for key in "${ORDER[@]}"; do
-  if [ -n "${GROUPS[$key]:-}" ]; then
-    CHANGELOG_TEXT="${CHANGELOG_TEXT}*${LABELS[$key]}:*\n$(printf '%b' "${GROUPS[$key]}")\n"
+for key in "${CL_ORDER[@]}"; do
+  if [ -n "${CL_GROUPS[$key]:-}" ]; then
+    CHANGELOG_TEXT="${CHANGELOG_TEXT}*${CL_LABELS[$key]}:*\n$(printf '%b' "${CL_GROUPS[$key]}")\n"
   fi
 done
 
