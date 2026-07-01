@@ -87,7 +87,6 @@ fi
 case "$ROOT" in
   sukisu)   ROOT_REPO="https://github.com/sukisu-ultra/sukisu-ultra.git"; REPO_NAME="sukisu-ultra"; BRANCH="main" ;;
   resukisu) ROOT_REPO="https://github.com/ReSukiSU/ReSukiSU.git"; REPO_NAME="ReSukiSU"; BRANCH="main" ;;
-  mambosu)  ROOT_REPO="https://github.com/RapliVx/KernelSU.git"; REPO_NAME="MamboSU"; BRANCH="master" ;;
   ksu-next) ROOT_REPO="https://github.com/KernelSU-Next/KernelSU-Next.git"; REPO_NAME="KernelSU-Next"; BRANCH="dev" ;;
   *)        REPO_NAME="none" ;;
 esac
@@ -113,18 +112,6 @@ else
 
   # SUSFS
   if [ "$VARIANT" == "susfs" ]; then
-    if [ "$ROOT" == "mambosu" ]; then
-      echo "[!] MamboSU: SUSFS not supported, skipping patch. Copying headers only..."
-      SUSFS_DIR="$MODULES_DIR/susfs4ksu"
-      if [ ! -d "$SUSFS_DIR" ]; then
-        git clone --depth=1 https://gitlab.com/simonpunk/susfs4ksu.git -b gki-android15-6.6-dev "$SUSFS_DIR"
-      fi
-      cp "$SUSFS_DIR/kernel_patches/include/linux/susfs.h" "$KERNEL_DIR/include/linux/susfs.h"
-      [ -f "$SUSFS_DIR/kernel_patches/include/linux/susfs_def.h" ] && \
-        cp "$SUSFS_DIR/kernel_patches/include/linux/susfs_def.h" "$KERNEL_DIR/include/linux/susfs_def.h"
-      [ -f "$SUSFS_DIR/kernel_patches/fs/susfs.c" ] && \
-        cp "$SUSFS_DIR/kernel_patches/fs/susfs.c" "$KERNEL_DIR/fs/susfs.c"
-    else
     SUSFS_DIR="$MODULES_DIR/susfs4ksu"
     if [ ! -d "$SUSFS_DIR" ]; then
       git clone --depth=1 https://gitlab.com/simonpunk/susfs4ksu.git -b gki-android15-6.6-dev "$SUSFS_DIR"
@@ -155,7 +142,6 @@ else
         patch -p1 --forward -f --reject-file=- \
         < "$SUSFS_DIR/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch" || true)
     fi
-    fi # end mambosu guard
   fi
 
   # SukiSU/YukiSU uapi symlink
@@ -168,7 +154,7 @@ else
 fi
 
 # SUSFS fixup
-if [ "$VARIANT" == "susfs" ] && [ "$ROOT" != "mambosu" ]; then
+if [ "$VARIANT" == "susfs" ]; then
   echo "[+] Running SUSFS fixup..."
   bash "$KERNEL_DIR/ksu_susfs_fixup.sh" "$KERNEL_DIR/drivers/kernelsu" "$ROOT"
 fi
@@ -419,12 +405,6 @@ case "$LTO_VAL" in
   *)    "$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" \
     -d CONFIG_LTO_NONE -d CONFIG_LTO_CLANG_FULL -e CONFIG_LTO_CLANG -e CONFIG_LTO_CLANG_THIN ;;
 esac
-
-# KALLSYMS_ALL for ZygiskNext/LSPosed (mambosu)
-if [ "$ROOT" == "mambosu" ]; then
-  "$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" \
-    -e CONFIG_KALLSYMS_ALL
-fi
 
 # Debug reduction
 "$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" \

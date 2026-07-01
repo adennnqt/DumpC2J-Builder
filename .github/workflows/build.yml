@@ -55,7 +55,6 @@ on:
           - ksu-next
           - sukisu
           - resukisu
-          - mambosu
         default: resukisu
       lto:
         description: "LTO Mode"
