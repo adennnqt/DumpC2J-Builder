@@ -61,6 +61,16 @@ LTO="${INPUT_LTO:-full}"
 LTO_VAL="$LTO"
 echo "LTO_ACTUAL=$LTO_VAL" >> "$GITHUB_ENV"
 
+# ==========================================
+# Guard: ReSukiSU wajib pakai variant SUSFS
+# ==========================================
+if [ "$ROOT" == "resukisu" ] && [ "$VARIANT" != "susfs" ]; then
+  echo "[!] ERROR: ReSukiSU hanya didukung dengan Variant = susfs."
+  echo "[!] Root-only (no susfs) untuk resukisu sengaja diblokir karena diketahui bikin freeze/reboot."
+  echo "[!] Re-run workflow dengan Variant diset ke 'susfs'."
+  exit 1
+fi
+
 
 # ==========================================
 # Apply kernel name & spoof uname to defconfig
