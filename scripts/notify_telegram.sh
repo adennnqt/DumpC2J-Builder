@@ -9,16 +9,42 @@ git fetch origin --tags 2>/dev/null || true
 TAG_NAME="dumpc2j-last-notified"
 
 if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
-  CHANGELOG=$(git log "${TAG_NAME}..HEAD" --no-merges --pretty=format:"%s" | grep -vi '\[ci\]' || true)
+  RAW_LOG=$(git log "${TAG_NAME}..HEAD" --no-merges --pretty=format:"%s" | grep -vi '\[ci\]' || true)
 else
-  CHANGELOG=$(git log -10 --no-merges --pretty=format:"%s" | grep -vi '\[ci\]' || true)
+  RAW_LOG=$(git log -10 --no-merges --pretty=format:"%s" | grep -vi '\[ci\]' || true)
 fi
 
-if [ -z "$CHANGELOG" ]; then
-  CHANGELOG_TEXT="No kernel changes since last build."
-else
-  CHANGELOG_TEXT=$(echo "$CHANGELOG" | sed 's/^/- /')
-fi
+declare -A GROUPS
+ORDER=(added fixed changed)
+declare -A LABELS=(
+  [added]="Added"
+  [fixed]="Fixed"
+  [changed]="Changed"
+)
+
+while IFS= read -r line; do
+  [ -z "$line" ] && continue
+  type=$(echo "$line" | grep -oP '^[a-zA-Z]+(?=(\([^)]*\))?:)' || true)
+  type=$(echo "$type" | tr '[:upper:]' '[:lower:]')
+  desc=$(echo "$line" | sed -E 's/^[a-zA-Z]+(\([^)]*\))?:\s*//')
+  desc="$(tr '[:lower:]' '[:upper:]' <<< "${desc:0:1}")${desc:1}"
+
+  case "$type" in
+    feat) key="added" ;;
+    fix)  key="fixed" ;;
+    *)    key="changed" ;;
+  esac
+  GROUPS[$key]="${GROUPS[$key]}• ${desc}\n"
+done <<< "$RAW_LOG"
+
+CHANGELOG_TEXT=""
+for key in "${ORDER[@]}"; do
+  if [ -n "${GROUPS[$key]:-}" ]; then
+    CHANGELOG_TEXT="${CHANGELOG_TEXT}*${LABELS[$key]}:*\n$(printf '%b' "${GROUPS[$key]}")\n"
+  fi
+done
+
+[ -z "$CHANGELOG_TEXT" ] && CHANGELOG_TEXT="No changes since last build."
 
 # Variant label
 case "$INPUT_VARIANT" in
@@ -50,7 +76,7 @@ MESSAGE="🔧 *DumpC2J Kernel Build*
 *Features:*
 $(printf '%b' "$FEAT")
 *Changes:*
-${CHANGELOG_TEXT}
+$(printf '%b' "$CHANGELOG_TEXT")
 
 📁 \`${ZIP_NAME}\`"
 
