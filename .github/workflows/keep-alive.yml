@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-24.04
     strategy:
       matrix:
-        clang_variant: [neutron]
+        clang_variant: [neutron, cirrus, weebx, zyc]
     steps:
       - name: Restore Clang Cache (${{ matrix.clang_variant }})
         uses: actions/cache@v4
