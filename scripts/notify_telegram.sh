@@ -83,10 +83,34 @@ $(printf '%b' "$CHANGELOG_TEXT")
 
 📁 \`${ZIP_NAME}\`"
 
-curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+# Escape karakter Markdown legacy yang bisa bikin parse gagal
+escape_md() {
+  printf '%s' "$1" | sed -e 's/[][()~`>#+=|{}.!-]/\\&/g'
+}
+
+RESPONSE=$(curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
   -d chat_id="${TELEGRAM_CHAT_ID}" \
   -d parse_mode="Markdown" \
-  --data-urlencode text="$MESSAGE" > /dev/null
+  --data-urlencode text="$MESSAGE")
 
-git tag -f "$TAG_NAME"
-git push origin "$TAG_NAME" --force 2>/dev/null || echo "[!] Gagal push tag (cek GH_TOKEN)"
+if echo "$RESPONSE" | grep -q '"ok":true'; then
+  echo "[✓] Notifikasi Telegram terkirim."
+  git tag -f "$TAG_NAME"
+  git push origin "$TAG_NAME" --force 2>/dev/null || echo "[!] Gagal push tag (cek GH_TOKEN)"
+else
+  echo "[!] Gagal kirim notif Telegram. Response:"
+  echo "$RESPONSE"
+  echo "[!] Coba kirim ulang tanpa Markdown (fallback plain text)..."
+  RESPONSE2=$(curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+    -d chat_id="${TELEGRAM_CHAT_ID}" \
+    --data-urlencode text="$MESSAGE")
+  if echo "$RESPONSE2" | grep -q '"ok":true'; then
+    echo "[✓] Terkirim sebagai plain text (Markdown-nya invalid, cek commit message lo)."
+    git tag -f "$TAG_NAME"
+    git push origin "$TAG_NAME" --force 2>/dev/null || echo "[!] Gagal push tag (cek GH_TOKEN)"
+  else
+    echo "[✗] Fallback plain text juga gagal:"
+    echo "$RESPONSE2"
+    exit 1
+  fi
+fi
