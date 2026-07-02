@@ -48,6 +48,7 @@ echo "INPUT_DEBUG=$DEBUG_MODE" >> "$GITHUB_ENV"
 
 BUILD_END=$(date +"%s")
 DIFF=$((BUILD_END - BUILD_START))
+echo "BUILD_DURATION_SEC=$DIFF" >> "$GITHUB_ENV"
 echo ""
 echo "=========================================="
 echo "Build done in $((DIFF / 60))m $((DIFF % 60))s"
