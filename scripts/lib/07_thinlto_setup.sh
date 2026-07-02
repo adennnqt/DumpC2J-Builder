@@ -30,7 +30,7 @@ fi
 
 # Nempel ke LDFLAGS yang udah di-set 06_clang_flags.sh
 # (aman: semua lib/*.sh disource dalam 1 proses shell yang sama)
-KERNEL_LDFLAGS="$KERNEL_LDFLAGS -Wl,--thinlto-cache-dir=${THINLTO_CACHE_DIR}"
+KERNEL_LDFLAGS="$KERNEL_LDFLAGS --thinlto-cache-dir=${THINLTO_CACHE_DIR}"
 
 echo "THINLTO_ASSET=${THINLTO_ASSET}" >> "$GITHUB_ENV"
 echo "THINLTO_TAG=${THINLTO_TAG}" >> "$GITHUB_ENV"
