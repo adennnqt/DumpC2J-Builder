@@ -494,9 +494,9 @@ done
 # Patch KPM into kernel image
 # ==========================================
 echo "[*] Patching KPM into $FOUND_IMG"
-curl -sLO https://github.com/bmax121/KernelPatch/releases/latest/download/kptools-android
+curl -sLO https://github.com/bmax121/KernelPatch/releases/latest/download/kptools-linux
 curl -sLO https://github.com/bmax121/KernelPatch/releases/latest/download/kpimg-android
-chmod +x kptools-android
+chmod +x kptools-linux
 
 RAW_IMG="${GITHUB_WORKSPACE}/kpm_raw_image"
 case "$FOUND_IMG" in
@@ -508,7 +508,7 @@ case "$FOUND_IMG" in
     ;;
 esac
 
-./kptools-android -p -i "$RAW_IMG" -k kpimg-android -S "$KPM_SUPERKEY" -o "$RAW_IMG" \
+./kptools-linux -p -i "$RAW_IMG" -k kpimg-android -S "$KPM_SUPERKEY" -o "$RAW_IMG" \
   || { echo "[-] KPM patch failed!"; exit 1; }
 
 case "$FOUND_IMG" in
