@@ -236,6 +236,7 @@ jobs:
           INPUT_SPOOF_UNAME: ${{ inputs.spoof_uname }}
           INPUT_VERSION_SPOOF: ${{ inputs.kernel_version_spoof }}
           INPUT_NOMOUNT: ${{ inputs.nomount }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           bash builder/scripts/build.sh
 

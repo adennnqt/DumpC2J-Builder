@@ -1,5 +1,4 @@
 #!/bin/bash
-echo "[orchestrator] sourcing 07_ccache_setup.sh"
 
 export CCACHE_DIR="${GITHUB_WORKSPACE}/.ccache"
 export CCACHE_BASEDIR="${GITHUB_WORKSPACE}"

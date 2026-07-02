@@ -1,5 +1,4 @@
 #!/bin/bash
-echo "[orchestrator] sourcing 10_ccache_save.sh"
 
 echo "[+] ccache stats after build:"
 ccache -s
