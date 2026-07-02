@@ -111,6 +111,8 @@ jobs:
   build:
     name: "Custom Build"
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
     outputs:
       lto_actual: ${{ steps.lto_output.outputs.lto_actual }}
 

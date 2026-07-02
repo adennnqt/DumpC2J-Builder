@@ -2,6 +2,7 @@
 echo "[orchestrator] sourcing 07_ccache_setup.sh"
 
 export CCACHE_DIR="${GITHUB_WORKSPACE}/.ccache"
+export CCACHE_BASEDIR="${GITHUB_WORKSPACE}"
 export CCACHE_MAXSIZE="3G"
 export CCACHE_COMPRESS="true"
 export USE_CCACHE=1
