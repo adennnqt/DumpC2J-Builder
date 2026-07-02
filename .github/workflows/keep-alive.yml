@@ -1,0 +1,19 @@
+name: 🍓 Keep Cache Alive
+
+on:
+  schedule:
+    - cron: '0 4 */5 * *'
+  workflow_dispatch:
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        clang_variant: [neutron]
+    steps:
+      - name: Restore Clang Cache (${{ matrix.clang_variant }})
+        uses: actions/cache@v4
+        with:
+          path: ~/toolchains/${{ matrix.clang_variant }}-clang
+          key: clang-${{ matrix.clang_variant }}
