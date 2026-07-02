@@ -132,6 +132,15 @@ jobs:
         with:
           path: builder
 
+      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.ccache
+          key: ccache-${{ inputs.variant }}-${{ inputs.root }}-${{ inputs.clang_variant }}-${{ github.run_id }}
+          restore-keys: |
+            ccache-${{ inputs.variant }}-${{ inputs.root }}-${{ inputs.clang_variant }}-
+            ccache-${{ inputs.variant }}-
+
       - name: Clone Kernel Source
         run: |
           git clone --depth=50 \
