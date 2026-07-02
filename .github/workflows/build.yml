@@ -210,20 +210,6 @@ jobs:
         run: |
           bash builder/scripts/setup_clang.sh ${{ inputs.clang_variant }}
 
-      - name: Patch KPM into kernel image
-        run: |
-          cd $GITHUB_WORKSPACE
-          curl -LO https://github.com/bmax121/KernelPatch/releases/latest/download/kptools-android
-          curl -LO https://github.com/bmax121/KernelPatch/releases/latest/download/kpimg-android
-          chmod +x kptools-android
-          IMG=out/arch/arm64/boot/Image
-          if [ -f "${IMG}.gz" ]; then
-            gunzip -k "${IMG}.gz"
-          fi
-          ./kptools-android -p -i "$IMG" -k kpimg-android -S "$KPM_SUPERKEY" -o "$IMG"
-        env:
-          KPM_SUPERKEY: ${{ secrets.KPM_SUPERKEY }}
-
       - name: Setup AnyKernel3
         run: |
           git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git anykernel
@@ -248,6 +234,7 @@ jobs:
           INPUT_SPOOF_UNAME: ${{ inputs.spoof_uname }}
           INPUT_VERSION_SPOOF: ${{ inputs.kernel_version_spoof }}
           INPUT_NOMOUNT: ${{ inputs.nomount }}
+          KPM_SUPERKEY: ${{ secrets.KPM_SUPERKEY }}
         run: |
           bash builder/scripts/build.sh
 

@@ -484,10 +484,43 @@ make -C "$KERNEL_DIR" \
 # ==========================================
 # Verify image exists
 IMAGE_FOUND=0
+FOUND_IMG=""
 for img in Image.gz-dtb Image.gz Image; do
-  [ -f "$ZIMAGE_DIR/$img" ] && { IMAGE_FOUND=1; break; }
+  [ -f "$ZIMAGE_DIR/$img" ] && { IMAGE_FOUND=1; FOUND_IMG="$img"; break; }
 done
 [ "$IMAGE_FOUND" == "0" ] && { echo "[-] No kernel image found!"; exit 1; }
+
+# ==========================================
+# Patch KPM into kernel image
+# ==========================================
+echo "[*] Patching KPM into $FOUND_IMG"
+curl -sLO https://github.com/bmax121/KernelPatch/releases/latest/download/kptools-android
+curl -sLO https://github.com/bmax121/KernelPatch/releases/latest/download/kpimg-android
+chmod +x kptools-android
+
+RAW_IMG="${GITHUB_WORKSPACE}/kpm_raw_image"
+case "$FOUND_IMG" in
+  Image.gz-dtb|Image.gz)
+    gunzip -c "$ZIMAGE_DIR/$FOUND_IMG" > "$RAW_IMG"
+    ;;
+  Image)
+    cp "$ZIMAGE_DIR/$FOUND_IMG" "$RAW_IMG"
+    ;;
+esac
+
+./kptools-android -p -i "$RAW_IMG" -k kpimg-android -S "$KPM_SUPERKEY" -o "$RAW_IMG" \
+  || { echo "[-] KPM patch failed!"; exit 1; }
+
+case "$FOUND_IMG" in
+  Image.gz-dtb|Image.gz)
+    gzip -c "$RAW_IMG" > "$ZIMAGE_DIR/$FOUND_IMG"
+    ;;
+  Image)
+    cp "$RAW_IMG" "$ZIMAGE_DIR/$FOUND_IMG"
+    ;;
+esac
+rm -f "$RAW_IMG"
+echo "[+] KPM patch applied to $FOUND_IMG"
 
 # Package
 # ==========================================
