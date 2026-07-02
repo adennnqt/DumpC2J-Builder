@@ -5,6 +5,11 @@ set -e
 # ccache setup
 # ==========================================
 export CCACHE_DIR="${GITHUB_WORKSPACE}/.ccache"
+
+# compiler di-download+patch ulang tiap run -> mtime selalu beda
+# pake content hash biar cache kepake lintas run
+export CCACHE_COMPILERCHECK="content"
+
 export CCACHE_MAXSIZE="3G"
 export CCACHE_COMPRESS=1
 export CCACHE_COMPRESSLEVEL=6
