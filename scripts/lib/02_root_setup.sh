@@ -55,12 +55,20 @@ else
         (cd "$SUSFS_DIR" && git remote set-url origin https://gitlab.com/simonpunk/susfs4ksu.git && git fetch origin && git checkout "$SUSFS_PIN" || true)
       fi
     else
+      echo "[!] WARNING: SUSFS_PIN not set — susfs4ksu will float to latest gki-android15-6.6-dev HEAD."
+      echo "[!] WARNING: this can silently break native-susfs roots (ksu-next/resukisu/kowsu) if upstream"
+      echo "[!] WARNING: susfs4ksu changes between builds. Set susfs_pin input once a good commit is known."
       if [ ! -d "$SUSFS_DIR" ]; then
         git clone --depth=1 https://gitlab.com/simonpunk/susfs4ksu.git -b gki-android15-6.6-dev "$SUSFS_DIR"
       else
         (cd "$SUSFS_DIR" && git remote set-url origin https://gitlab.com/simonpunk/susfs4ksu.git && git fetch origin && git reset --hard origin/gki-android15-6.6-dev || true)
       fi
     fi
+
+    SUSFS_RESOLVED_SHA="$(cd "$SUSFS_DIR" && git rev-parse HEAD 2>/dev/null || echo unknown)"
+    SUSFS_RESOLVED_DATE="$(cd "$SUSFS_DIR" && git log -1 --format=%ci 2>/dev/null || echo unknown)"
+    echo "[+] susfs4ksu resolved commit: $SUSFS_RESOLVED_SHA ($SUSFS_RESOLVED_DATE)"
+    echo "SUSFS_RESOLVED_SHA=$SUSFS_RESOLVED_SHA" >> "$GITHUB_ENV"
 
     echo "[+] Injecting SUSFS kernel sources..."
     cp "$SUSFS_DIR/kernel_patches/fs/susfs.c" "$KERNEL_DIR/fs/susfs.c"
