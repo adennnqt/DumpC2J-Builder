@@ -18,6 +18,7 @@ if [ "$ROOT" == "resukisu" ]; then
   SUCOMPAT_IMPL="$MODULES_DIR/$REPO_NAME/kernel/feature/sucompat_proc_flag.c"
   if [ ! -f "$SUCOMPAT_IMPL" ]; then
     echo "[*] Generating sucompat_proc_flag.c for ReSukiSU susfs LTO fix..."
+    mkdir -p "$(dirname "$SUCOMPAT_IMPL")"
     cat > "$SUCOMPAT_IMPL" << 'SCEOF'
 #include <linux/types.h>
 #include <linux/thread_info.h>

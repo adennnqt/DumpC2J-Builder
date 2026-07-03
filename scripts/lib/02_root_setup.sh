@@ -6,8 +6,8 @@ set -e
 # ==========================================
 case "$ROOT" in
   sukisu)   ROOT_REPO="https://github.com/sukisu-ultra/sukisu-ultra.git"; REPO_NAME="sukisu-ultra"; BRANCH="main" ;;
-  resukisu) ROOT_REPO="https://github.com/ReSukiSU/ReSukiSU.git"; REPO_NAME="ReSukiSU"; BRANCH="main"; PIN_COMMIT="v4.1.0"; SUSFS_PIN="709129bc30aadb6a2a16b813cd49f675c30127dd" ;;
-  ksu-next) ROOT_REPO="https://github.com/KernelSU-Next/KernelSU-Next.git"; REPO_NAME="KernelSU-Next"; BRANCH="dev"; PIN_COMMIT="1de68a8ed2a09ac575c88d3556c1084937669d84"; SUSFS_PIN="a52b8edfe32d40fae7f884d75848b7257c9f91b6" ;;
+  resukisu) ROOT_REPO="https://github.com/ReSukiSU/ReSukiSU.git"; REPO_NAME="ReSukiSU"; BRANCH="main"; PIN_COMMIT="v4.1.0" ;;
+  ksu-next) ROOT_REPO="https://github.com/KernelSU-Next/KernelSU-Next.git"; REPO_NAME="KernelSU-Next"; BRANCH="dev"; PIN_COMMIT="1de68a8ed2a09ac575c88d3556c1084937669d84" ;;
   kowsu)    ROOT_REPO="https://github.com/KOWX712/KernelSU.git"; REPO_NAME="KOWX712-KernelSU"; BRANCH="master"; PIN_COMMIT="cc559ad732ac73feeafcff7e6b5ee4d2c51c8147" ;;
   *)        REPO_NAME="none" ;;
 esac
