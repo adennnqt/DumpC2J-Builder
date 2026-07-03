@@ -6,9 +6,9 @@ set -e
 # ==========================================
 case "$ROOT" in
   sukisu)   ROOT_REPO="https://github.com/sukisu-ultra/sukisu-ultra.git"; REPO_NAME="sukisu-ultra"; BRANCH="main" ;;
-  resukisu) ROOT_REPO="https://github.com/ReSukiSU/ReSukiSU.git"; REPO_NAME="ReSukiSU"; BRANCH="main" ;;
-  ksu-next) ROOT_REPO="https://github.com/KernelSU-Next/KernelSU-Next.git"; REPO_NAME="KernelSU-Next"; BRANCH="dev" ;;
-  kowsu)    ROOT_REPO="https://github.com/KOWX712/KernelSU.git"; REPO_NAME="KOWX712-KernelSU"; BRANCH="master" ;;
+  resukisu) ROOT_REPO="https://github.com/ReSukiSU/ReSukiSU.git"; REPO_NAME="ReSukiSU"; BRANCH="main"; PIN_COMMIT="v4.1.0"; SUSFS_PIN="709129bc30aadb6a2a16b813cd49f675c30127dd" ;;
+  ksu-next) ROOT_REPO="https://github.com/KernelSU-Next/KernelSU-Next.git"; REPO_NAME="KernelSU-Next"; BRANCH="dev"; PIN_COMMIT="1de68a8ed2a09ac575c88d3556c1084937669d84"; SUSFS_PIN="a52b8edfe32d40fae7f884d75848b7257c9f91b6" ;;
+  kowsu)    ROOT_REPO="https://github.com/KOWX712/KernelSU.git"; REPO_NAME="KOWX712-KernelSU"; BRANCH="master"; PIN_COMMIT="cc559ad732ac73feeafcff7e6b5ee4d2c51c8147" ;;
   *)        REPO_NAME="none" ;;
 esac
 
@@ -24,20 +24,42 @@ if [ "$VARIANT" == "stock" ]; then
 else
   mkdir -p "$MODULES_DIR"
   if [ ! -d "$MODULES_DIR/$REPO_NAME" ]; then
-    echo "[+] Cloning $REPO_NAME..."
-    git clone --depth=1 -b "$BRANCH" "$ROOT_REPO" "$MODULES_DIR/$REPO_NAME"
+    if [ -n "${PIN_COMMIT:-}" ]; then
+      echo "[+] Cloning $REPO_NAME (full history, pinned to $PIN_COMMIT)..."
+      git clone -b "$BRANCH" "$ROOT_REPO" "$MODULES_DIR/$REPO_NAME"
+      (cd "$MODULES_DIR/$REPO_NAME" && git checkout "$PIN_COMMIT")
+    else
+      echo "[+] Cloning $REPO_NAME..."
+      git clone --depth=1 -b "$BRANCH" "$ROOT_REPO" "$MODULES_DIR/$REPO_NAME"
+    fi
   else
-    echo "[+] Updating $REPO_NAME..."
-    (cd "$MODULES_DIR/$REPO_NAME" && git fetch origin && git reset --hard "origin/$BRANCH" || true)
+    if [ -n "${PIN_COMMIT:-}" ]; then
+      echo "[+] Updating $REPO_NAME (pinned to $PIN_COMMIT)..."
+      (cd "$MODULES_DIR/$REPO_NAME" && git fetch origin && git checkout "$PIN_COMMIT" || true)
+    else
+      echo "[+] Updating $REPO_NAME..."
+      (cd "$MODULES_DIR/$REPO_NAME" && git fetch origin && git reset --hard "origin/$BRANCH" || true)
+    fi
   fi
 
   # SUSFS
   if [ "$VARIANT" == "susfs" ]; then
     SUSFS_DIR="$MODULES_DIR/susfs4ksu"
-    if [ ! -d "$SUSFS_DIR" ]; then
-      git clone --depth=1 https://gitlab.com/simonpunk/susfs4ksu.git -b gki-android15-6.6-dev "$SUSFS_DIR"
+    if [ -n "${SUSFS_PIN:-}" ]; then
+      if [ ! -d "$SUSFS_DIR" ]; then
+        echo "[+] Cloning susfs4ksu (pinned to $SUSFS_PIN)..."
+        git clone https://gitlab.com/simonpunk/susfs4ksu.git "$SUSFS_DIR"
+        (cd "$SUSFS_DIR" && git checkout "$SUSFS_PIN")
+      else
+        echo "[+] Updating susfs4ksu (pinned to $SUSFS_PIN)..."
+        (cd "$SUSFS_DIR" && git remote set-url origin https://gitlab.com/simonpunk/susfs4ksu.git && git fetch origin && git checkout "$SUSFS_PIN" || true)
+      fi
     else
-      (cd "$SUSFS_DIR" && git fetch origin && git reset --hard origin/gki-android15-6.6-dev || true)
+      if [ ! -d "$SUSFS_DIR" ]; then
+        git clone --depth=1 https://gitlab.com/simonpunk/susfs4ksu.git -b gki-android15-6.6-dev "$SUSFS_DIR"
+      else
+        (cd "$SUSFS_DIR" && git remote set-url origin https://gitlab.com/simonpunk/susfs4ksu.git && git fetch origin && git reset --hard origin/gki-android15-6.6-dev || true)
+      fi
     fi
 
     echo "[+] Injecting SUSFS kernel sources..."
@@ -60,8 +82,10 @@ else
     else
       echo "[+] Patching $REPO_NAME for SUSFS..."
       (cd "$MODULES_DIR/$REPO_NAME" && \
-        patch -p1 --forward -f --reject-file=- \
-        < "$SUSFS_DIR/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch" || true)
+        patch -p1 --forward -f \
+        < "$SUSFS_DIR/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch" 2>&1 | tee /tmp/susfs_patch.log || true)
+      source "$(dirname "${BASH_SOURCE[0]}")/check_susfs_patch.sh"
+      check_susfs_patch /tmp/susfs_patch.log
     fi
   fi
 

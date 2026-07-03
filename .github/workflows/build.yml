@@ -241,6 +241,15 @@ jobs:
         run: |
           bash builder/scripts/build.sh
 
+      - name: Upload SUSFS Reject Files (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: susfs-rejects-${{ env.BUILD_NAME }}
+          path: kernel-source/.root_modules/**/*.rej
+          if-no-files-found: ignore
+          retention-days: 3
+
       - name: Set LTO Output
         id: lto_output
         run: echo "lto_actual=${{ env.LTO_ACTUAL }}" >> "$GITHUB_OUTPUT"
