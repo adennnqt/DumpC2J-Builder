@@ -1,9 +1,6 @@
 #!/bin/bash
 set -e
 
-# ==========================================
-# Resolve Root
-# ==========================================
 case "$ROOT" in
   sukisu)   ROOT_REPO="https://github.com/sukisu-ultra/sukisu-ultra.git"; REPO_NAME="sukisu-ultra"; BRANCH="main" ;;
   resukisu) ROOT_REPO="https://github.com/ReSukiSU/ReSukiSU.git"; REPO_NAME="ReSukiSU"; BRANCH="main" ;;
@@ -12,9 +9,8 @@ case "$ROOT" in
   *)        REPO_NAME="none" ;;
 esac
 
-# ==========================================
-# Setup Root Module
-# ==========================================
+echo "REPO_NAME=$REPO_NAME" >> "$GITHUB_ENV"
+
 rm -rf "$KERNEL_DIR/drivers/kernelsu"
 
 if [ "$VARIANT" == "stock" ]; then
@@ -23,15 +19,37 @@ if [ "$VARIANT" == "stock" ]; then
   touch "$KERNEL_DIR/drivers/kernelsu/Makefile"
 else
   mkdir -p "$MODULES_DIR"
+  KNOWN_GOOD_FILE="${GITHUB_WORKSPACE}/scripts/known-good/${ROOT}.sha"
+  KNOWN_GOOD_SHA=$(cat "$KNOWN_GOOD_FILE" 2>/dev/null || echo "")
+
   if [ ! -d "$MODULES_DIR/$REPO_NAME" ]; then
-    echo "[+] Cloning $REPO_NAME..."
-    git clone --depth=1 -b "$BRANCH" "$ROOT_REPO" "$MODULES_DIR/$REPO_NAME"
+    echo "[+] Cloning $REPO_NAME (full history, buat fallback)..."
+    git clone -b "$BRANCH" "$ROOT_REPO" "$MODULES_DIR/$REPO_NAME"
   else
-    echo "[+] Updating $REPO_NAME..."
-    (cd "$MODULES_DIR/$REPO_NAME" && git fetch origin && git reset --hard "origin/$BRANCH" || true)
+    echo "[+] Fetching $REPO_NAME..."
+    (cd "$MODULES_DIR/$REPO_NAME" && git fetch origin "$BRANCH")
   fi
 
-  # SUSFS
+  cd "$MODULES_DIR/$REPO_NAME"
+  LATEST_SHA=$(git rev-parse "origin/$BRANCH")
+
+  if [ "$FORCE_KNOWN_GOOD" == "true" ] && [ -n "$KNOWN_GOOD_SHA" ]; then
+    echo "[!] Fallback mode: checkout known-good ${ROOT} @ ${KNOWN_GOOD_SHA:0:8}"
+    git checkout --quiet "$KNOWN_GOOD_SHA"
+    echo "MANAGER_USED_SHA=${KNOWN_GOOD_SHA}" >> "$GITHUB_ENV"
+    echo "MANAGER_USING_LATEST=false" >> "$GITHUB_ENV"
+  else
+    echo "[+] Trying latest ${ROOT} @ ${LATEST_SHA:0:8}"
+    git checkout --quiet "$LATEST_SHA"
+    echo "MANAGER_USED_SHA=${LATEST_SHA}" >> "$GITHUB_ENV"
+    echo "MANAGER_USING_LATEST=true" >> "$GITHUB_ENV"
+  fi
+
+  echo "MANAGER_ROOT_NAME=${ROOT}" >> "$GITHUB_ENV"
+  echo "MANAGER_REPO_DIR=${MODULES_DIR}/${REPO_NAME}" >> "$GITHUB_ENV"
+  echo "MANAGER_KNOWN_GOOD_SHA=${KNOWN_GOOD_SHA}" >> "$GITHUB_ENV"
+  cd "$GITHUB_WORKSPACE"
+
   if [ "$VARIANT" == "susfs" ]; then
     SUSFS_DIR="$MODULES_DIR/susfs4ksu"
     if [ ! -d "$SUSFS_DIR" ]; then
@@ -65,7 +83,6 @@ else
     fi
   fi
 
-  # SukiSU/YukiSU uapi symlink
   if [ ! -d "$MODULES_DIR/$REPO_NAME/kernel/uapi" ] && [ -d "$MODULES_DIR/$REPO_NAME/uapi" ]; then
     ln -sfn ../uapi "$MODULES_DIR/$REPO_NAME/kernel/uapi"
   fi
@@ -74,7 +91,6 @@ else
   ln -sf "$MODULES_DIR/$REPO_NAME/kernel" "$KERNEL_DIR/drivers/kernelsu"
 fi
 
-# SUSFS fixup
 if [ "$VARIANT" == "susfs" ]; then
   echo "[+] Running SUSFS fixup..."
   bash "$KERNEL_DIR/ksu_susfs_fixup.sh" "$KERNEL_DIR/drivers/kernelsu" "$ROOT"
