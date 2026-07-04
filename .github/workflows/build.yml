@@ -120,8 +120,7 @@ jobs:
       - name: Validate Input Combination
         run: |
           if [ "${{ inputs.variant }}" == "root" ] && [ "${{ inputs.root }}" == "resukisu" ]; then
-            echo "::error::ReSukiSU requires SUSFS — root-only mode is not supported. Use variant=susfs instead."
-            exit 1
+            echo "::warning::ReSukiSU root-only was previously blocked due to a manager-open crash — retesting after execveat_init fix (commit 7667f76)."
           fi
           echo "[+] Input combination valid: variant=${{ inputs.variant }}, root=${{ inputs.root }}"
 
