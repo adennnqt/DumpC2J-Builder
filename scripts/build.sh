@@ -10,8 +10,6 @@ run_all_libs() {
   done
 }
 
-export FORCE_LATEST="${INPUT_FORCE_LATEST:-false}"
-
 if run_all_libs; then
   BUILD_OK=true
 else
@@ -21,8 +19,10 @@ fi
 if [ -n "${PIN_KEY:-}" ]; then
   if [ "$BUILD_OK" == "true" ]; then
     bash "${SCRIPT_DIR}/engine.sh" success "$PIN_KEY" "$PIN_PREFIX"
+    bash "${SCRIPT_DIR}/engine.sh" success "susfs4ksu" "SUSFS4KSU"
   else
     bash "${SCRIPT_DIR}/engine.sh" failure "$PIN_KEY" "$PIN_PREFIX" || true
+    bash "${SCRIPT_DIR}/engine.sh" failure "susfs4ksu" "SUSFS4KSU" || true
   fi
 fi
 
