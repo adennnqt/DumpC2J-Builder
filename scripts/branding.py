@@ -16,7 +16,7 @@ def main():
     with open(makefile_path) as f:
         content = f.read()
 
-    marker = f"KSU_VERSION_FULL := $(KSU_VERSION_FULL) {custom_name}"
+    marker = f"KSU_VERSION_FULL := $(KSU_VERSION_FULL)-{custom_name}"
 
     if marker in content:
         print(f"[branding] '{custom_name}' already injected, skipping.")
