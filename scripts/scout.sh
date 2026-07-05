@@ -124,3 +124,13 @@ case "$ROOT" in
     log "scout: ROOT=none — nothing to track"
     ;;
 esac
+
+# SUSFS patch source (GitLab simonpunk/susfs4ksu) — shared dependency
+# dipake semua root method pas VARIANT=susfs, di-track independen lewat
+# key manifest sendiri biar dapet proteksi pin/candidate/blacklist yang
+# sama kayak repo KernelSU fork di atas.
+if [ "$VARIANT" == "susfs" ]; then
+  latest=$(latest_sha_or_empty "SuSFS (susfs4ksu, GitLab)" \
+    "https://gitlab.com/api/v4/projects/simonpunk%2Fsusfs4ksu/repository/commits/gki-android15-6.6-dev" '.id')
+  resolve_component "susfs4ksu" "SUSFS4KSU" "$latest"
+fi
