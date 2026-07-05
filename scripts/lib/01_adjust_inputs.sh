@@ -21,7 +21,7 @@ if [ "$ROOT" == "resukisu" ] && [ "$VARIANT" != "susfs" ]; then
   echo "[!] ERROR: ReSukiSU hanya didukung dengan Variant = susfs."
   echo "[!] Root-only (no susfs) untuk resukisu sengaja diblokir karena diketahui bikin freeze/reboot."
   echo "[!] Re-run workflow dengan Variant diset ke 'susfs'."
-  exit 1
+  echo "[!] NOTE: informational only, proceeding (retest after execveat_init fix, commit 7667f76)."
 fi
 
 
