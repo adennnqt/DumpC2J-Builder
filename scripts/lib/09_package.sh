@@ -29,7 +29,12 @@ KSL=$(grep '^SUBLEVEL = ' "$KERNEL_DIR/Makefile" | awk '{print $3}')
 KERNEL_VER="${KVER}.${KPL}.${KSL}"
 echo "KERNEL_VER=$KERNEL_VER" >> "$GITHUB_ENV"
 
-ZIP_NAME="anykern3-DumpC2J-${KERNEL_VER}-${TIME}.zip"
+if [ "$VARIANT" == "stock" ]; then
+  BUILD_TAG="vanilla"
+else
+  BUILD_TAG="${ROOT}-${VARIANT}"
+fi
+ZIP_NAME="DumpC2J-${BUILD_TAG}-${KERNEL_VER}-${HZ}-${TIME}.zip"
 cd "$TEMP_DIR" && zip -r9 "${GITHUB_WORKSPACE}/$ZIP_NAME" . \
   -x '.git*' -x 'README.md' -x '*placeholder' > /dev/null
 cd "$GITHUB_WORKSPACE"
