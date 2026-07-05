@@ -33,14 +33,19 @@ else
   cd "$MODULES_DIR/$REPO_NAME"
   LATEST_SHA=$(git rev-parse "origin/$BRANCH")
 
-  if [ "$FORCE_KNOWN_GOOD" == "true" ] && [ -n "$KNOWN_GOOD_SHA" ]; then
-    echo "[!] Fallback mode: checkout known-good ${ROOT} @ ${KNOWN_GOOD_SHA:0:8}"
-    git checkout --quiet "$KNOWN_GOOD_SHA"
+  if [ "$FORCE_LATEST" == "true" ]; then
+    echo "[+] Trying latest ${ROOT} @ ${LATEST_SHA:0:8} (explicit opt-in)"
+    git checkout -B "$BRANCH" --quiet "$LATEST_SHA"
+    echo "MANAGER_USED_SHA=${LATEST_SHA}" >> "$GITHUB_ENV"
+    echo "MANAGER_USING_LATEST=true" >> "$GITHUB_ENV"
+  elif [ -n "$KNOWN_GOOD_SHA" ]; then
+    echo "[+] Pinned mode: checkout known-good ${ROOT} @ ${KNOWN_GOOD_SHA:0:8}"
+    git checkout -B "$BRANCH" --quiet "$KNOWN_GOOD_SHA"
     echo "MANAGER_USED_SHA=${KNOWN_GOOD_SHA}" >> "$GITHUB_ENV"
     echo "MANAGER_USING_LATEST=false" >> "$GITHUB_ENV"
   else
-    echo "[+] Trying latest ${ROOT} @ ${LATEST_SHA:0:8}"
-    git checkout --quiet "$LATEST_SHA"
+    echo "[!] No known-good pin found for ${ROOT} — falling back to latest ${LATEST_SHA:0:8}"
+    git checkout -B "$BRANCH" --quiet "$LATEST_SHA"
     echo "MANAGER_USED_SHA=${LATEST_SHA}" >> "$GITHUB_ENV"
     echo "MANAGER_USING_LATEST=true" >> "$GITHUB_ENV"
   fi
