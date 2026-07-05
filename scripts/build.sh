@@ -10,7 +10,7 @@ run_all_libs() {
   done
 }
 
-export FORCE_KNOWN_GOOD=false
+export FORCE_LATEST=false
 
 if run_all_libs; then
   BUILD_OK=true
@@ -40,7 +40,7 @@ else
   fi
 
   echo "[+] Fallback: retry build pake known-good ${MANAGER_ROOT_NAME}@${MANAGER_KNOWN_GOOD_SHA:0:8}"
-  export FORCE_KNOWN_GOOD=true
+  export FORCE_LATEST=false  # already unused; retry below is now redundant but harmless since default is already pinned
 
   if run_all_libs; then
     echo "[+] Fallback build sukses."
