@@ -94,9 +94,13 @@ case "$ROOT" in
     fi
     ;;
   resukisu)
-    latest=$(latest_sha_or_empty "ReSukiSU" \
+    latest=$(latest_sha_or_empty "ReSukiSU (main)" \
       "https://api.github.com/repos/ReSukiSU/ReSukiSU/commits/main" '.sha')
-    resolve_component "resukisu_susfs" "RESUKISU_SUSFS" "$latest"
+    if [ "$VARIANT" == "susfs" ]; then
+      resolve_component "resukisu_susfs" "RESUKISU_SUSFS" "$latest"
+    else
+      resolve_component "resukisu_root" "RESUKISU_ROOT" "$latest"
+    fi
     ;;
   ksu-next)
     if [ "$VARIANT" == "susfs" ]; then

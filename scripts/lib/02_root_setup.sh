@@ -6,7 +6,8 @@ case "$ROOT" in
             if [ "$VARIANT" == "susfs" ]; then BRANCH="builtin"; PIN_KEY="sukisu_susfs"; PIN_PREFIX="SUKISU_SUSFS"
             else BRANCH="main"; PIN_KEY="sukisu_root"; PIN_PREFIX="SUKISU_ROOT"; fi ;;
   resukisu) ROOT_REPO="https://github.com/ReSukiSU/ReSukiSU.git"; REPO_NAME="ReSukiSU"; BRANCH="main"
-            PIN_KEY="resukisu_susfs"; PIN_PREFIX="RESUKISU_SUSFS" ;;
+            if [ "$VARIANT" == "susfs" ]; then PIN_KEY="resukisu_susfs"; PIN_PREFIX="RESUKISU_SUSFS"
+            else PIN_KEY="resukisu_root"; PIN_PREFIX="RESUKISU_ROOT"; fi ;;
   ksu-next) ROOT_REPO="https://github.com/KernelSU-Next/KernelSU-Next.git"; REPO_NAME="KernelSU-Next"; BRANCH="dev"
             if [ "$VARIANT" == "susfs" ]; then PIN_KEY="ksunext_susfs"; PIN_PREFIX="KSUNEXT_SUSFS"
             else PIN_KEY="ksunext_root"; PIN_PREFIX="KSUNEXT_ROOT"; fi ;;
