@@ -57,11 +57,28 @@ else
 
   if [ "$VARIANT" == "susfs" ]; then
     SUSFS_DIR="$MODULES_DIR/susfs4ksu"
+    SUSFS_BRANCH="gki-android15-6.6-dev"
+    SUSFS_KNOWN_GOOD_FILE="${GITHUB_WORKSPACE}/scripts/known-good/susfs_${ROOT}.sha"
+    SUSFS_KNOWN_GOOD_SHA=$(cat "$SUSFS_KNOWN_GOOD_FILE" 2>/dev/null || echo "")
+
     if [ ! -d "$SUSFS_DIR" ]; then
-      git clone --depth=1 https://gitlab.com/simonpunk/susfs4ksu.git -b gki-android15-6.6-dev "$SUSFS_DIR"
+      git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH" "$SUSFS_DIR"
     else
-      (cd "$SUSFS_DIR" && git fetch origin && git reset --hard origin/gki-android15-6.6-dev || true)
+      (cd "$SUSFS_DIR" && git fetch origin "$SUSFS_BRANCH")
     fi
+
+    if [ "$FORCE_LATEST" == "true" ]; then
+      SUSFS_TARGET_SHA=$(cd "$SUSFS_DIR" && git rev-parse "origin/$SUSFS_BRANCH")
+      echo "[+] SUSFS: trying latest @ ${SUSFS_TARGET_SHA:0:8} (explicit opt-in)"
+    elif [ -n "$SUSFS_KNOWN_GOOD_SHA" ]; then
+      SUSFS_TARGET_SHA="$SUSFS_KNOWN_GOOD_SHA"
+      echo "[+] SUSFS: pinned mode @ ${SUSFS_TARGET_SHA:0:8}"
+    else
+      SUSFS_TARGET_SHA=$(cd "$SUSFS_DIR" && git rev-parse "origin/$SUSFS_BRANCH")
+      echo "[!] SUSFS: no known-good pin found — falling back to latest @ ${SUSFS_TARGET_SHA:0:8}"
+    fi
+    (cd "$SUSFS_DIR" && git checkout --quiet "$SUSFS_TARGET_SHA")
+    echo "SUSFS_USED_SHA=${SUSFS_TARGET_SHA}" >> "$GITHUB_ENV"
 
     echo "[+] Injecting SUSFS kernel sources..."
     cp "$SUSFS_DIR/kernel_patches/fs/susfs.c" "$KERNEL_DIR/fs/susfs.c"
