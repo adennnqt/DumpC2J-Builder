@@ -10,7 +10,7 @@ run_all_libs() {
   done
 }
 
-export FORCE_LATEST=false
+export FORCE_LATEST="${INPUT_FORCE_LATEST:-false}"
 
 if run_all_libs; then
   BUILD_OK=true
