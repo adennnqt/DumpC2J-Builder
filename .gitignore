@@ -1,4 +1,4 @@
 *.bak
 *.orig
-DumpC2J-Builder/
 *.py
+!scripts/*.py
