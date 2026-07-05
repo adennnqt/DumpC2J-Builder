@@ -2,12 +2,22 @@
 set -e
 
 case "$ROOT" in
-  sukisu)   ROOT_REPO="https://github.com/sukisu-ultra/sukisu-ultra.git"; REPO_NAME="sukisu-ultra"; BRANCH="builtin" ;;
-  resukisu) ROOT_REPO="https://github.com/ReSukiSU/ReSukiSU.git"; REPO_NAME="ReSukiSU"; BRANCH="main" ;;
-  ksu-next) ROOT_REPO="https://github.com/KernelSU-Next/KernelSU-Next.git"; REPO_NAME="KernelSU-Next"; BRANCH="dev" ;;
-  kowsu)    ROOT_REPO="https://github.com/KOWX712/KernelSU.git"; REPO_NAME="KOWX712-KernelSU"; BRANCH="master" ;;
+  sukisu)   ROOT_REPO="https://github.com/sukisu-ultra/sukisu-ultra.git"; REPO_NAME="sukisu-ultra"
+            if [ "$VARIANT" == "susfs" ]; then BRANCH="builtin"; PIN_KEY="sukisu_susfs"; PIN_PREFIX="SUKISU_SUSFS"
+            else BRANCH="main"; PIN_KEY="sukisu_root"; PIN_PREFIX="SUKISU_ROOT"; fi ;;
+  resukisu) ROOT_REPO="https://github.com/ReSukiSU/ReSukiSU.git"; REPO_NAME="ReSukiSU"; BRANCH="main"
+            PIN_KEY="resukisu_susfs"; PIN_PREFIX="RESUKISU_SUSFS" ;;
+  ksu-next) ROOT_REPO="https://github.com/KernelSU-Next/KernelSU-Next.git"; REPO_NAME="KernelSU-Next"; BRANCH="dev"
+            if [ "$VARIANT" == "susfs" ]; then PIN_KEY="ksunext_susfs"; PIN_PREFIX="KSUNEXT_SUSFS"
+            else PIN_KEY="ksunext_root"; PIN_PREFIX="KSUNEXT_ROOT"; fi ;;
+  kowsu)    ROOT_REPO="https://github.com/KOWX712/KernelSU.git"; REPO_NAME="KOWX712-KernelSU"; BRANCH="master"
+            if [ "$VARIANT" == "susfs" ]; then PIN_KEY="kowsu_susfs"; PIN_PREFIX="KOWSU_SUSFS"
+            else PIN_KEY="kowsu_root"; PIN_PREFIX="KOWSU_ROOT"; fi ;;
   *)        REPO_NAME="none" ;;
 esac
+
+echo "PIN_KEY=${PIN_KEY:-}" >> "$GITHUB_ENV"
+echo "PIN_PREFIX=${PIN_PREFIX:-}" >> "$GITHUB_ENV"
 
 echo "REPO_NAME=$REPO_NAME" >> "$GITHUB_ENV"
 
@@ -19,8 +29,9 @@ if [ "$VARIANT" == "stock" ]; then
   touch "$KERNEL_DIR/drivers/kernelsu/Makefile"
 else
   mkdir -p "$MODULES_DIR"
-  KNOWN_GOOD_FILE="${GITHUB_WORKSPACE}/scripts/known-good/${ROOT}.sha"
-  KNOWN_GOOD_SHA=$(cat "$KNOWN_GOOD_FILE" 2>/dev/null || echo "")
+  REF_VAR="${PIN_PREFIX}_REF"
+  RESOLVED_SHA="${!REF_VAR}"
+  [ -z "$RESOLVED_SHA" ] && { echo "[-] ERROR: ${REF_VAR} kosong — scout.sh belum jalan atau gagal resolve."; exit 1; }
 
   if [ ! -d "$MODULES_DIR/$REPO_NAME" ]; then
     echo "[+] Cloning $REPO_NAME (full history, buat fallback)..."
@@ -30,29 +41,11 @@ else
     (cd "$MODULES_DIR/$REPO_NAME" && git fetch origin "$BRANCH")
   fi
 
-  cd "$MODULES_DIR/$REPO_NAME"
-  LATEST_SHA=$(git rev-parse "origin/$BRANCH")
-
-  if [ "$FORCE_LATEST" == "true" ]; then
-    echo "[+] Trying latest ${ROOT} @ ${LATEST_SHA:0:8} (explicit opt-in)"
-    git checkout -B "$BRANCH" --quiet "$LATEST_SHA"
-    echo "MANAGER_USED_SHA=${LATEST_SHA}" >> "$GITHUB_ENV"
-    echo "MANAGER_USING_LATEST=true" >> "$GITHUB_ENV"
-  elif [ -n "$KNOWN_GOOD_SHA" ]; then
-    echo "[+] Pinned mode: checkout known-good ${ROOT} @ ${KNOWN_GOOD_SHA:0:8}"
-    git checkout -B "$BRANCH" --quiet "$KNOWN_GOOD_SHA"
-    echo "MANAGER_USED_SHA=${KNOWN_GOOD_SHA}" >> "$GITHUB_ENV"
-    echo "MANAGER_USING_LATEST=false" >> "$GITHUB_ENV"
-  else
-    echo "[!] No known-good pin found for ${ROOT} — falling back to latest ${LATEST_SHA:0:8}"
-    git checkout -B "$BRANCH" --quiet "$LATEST_SHA"
-    echo "MANAGER_USED_SHA=${LATEST_SHA}" >> "$GITHUB_ENV"
-    echo "MANAGER_USING_LATEST=true" >> "$GITHUB_ENV"
-  fi
+  echo "[+] Checkout ${PIN_KEY} @ ${RESOLVED_SHA:0:8} (dari scout.sh)"
+  (cd "$MODULES_DIR/$REPO_NAME" && git checkout -B "$BRANCH" --quiet "$RESOLVED_SHA")
 
   echo "MANAGER_ROOT_NAME=${ROOT}" >> "$GITHUB_ENV"
   echo "MANAGER_REPO_DIR=${MODULES_DIR}/${REPO_NAME}" >> "$GITHUB_ENV"
-  echo "MANAGER_KNOWN_GOOD_SHA=${KNOWN_GOOD_SHA}" >> "$GITHUB_ENV"
   cd "$GITHUB_WORKSPACE"
 
   if [ "$VARIANT" == "susfs" ]; then

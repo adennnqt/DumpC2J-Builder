@@ -103,14 +103,14 @@ on:
           - "off"
           - "on"
         default: "off"
-      force_latest:
-        description: "Force Latest (skip known-good pin, test upstream latest commit)"
+      run_mode:
+        description: "Run Mode (Release=pinned only, Test=check upstream)"
         required: true
         type: choice
         options:
-          - "off"
-          - "on"
-        default: "off"
+          - Release
+          - Test
+        default: Release
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -222,6 +222,13 @@ jobs:
           cp kernel-source/anykernel/anykernel.sh anykernel/anykernel.sh
           cp -r kernel-source/anykernel/tools/* anykernel/tools/
 
+      - name: Scout Checkpoint
+        env:
+          ROOT: ${{ env.ACTUAL_ROOT }}
+          VARIANT: ${{ inputs.variant }}
+          RUN_MODE: ${{ inputs.run_mode }}
+        run: bash builder/scripts/scout.sh
+
       - name: Build Kernel
         env:
           INPUT_HZ: ${{ inputs.hz }}
@@ -240,7 +247,6 @@ jobs:
           INPUT_SPOOF_UNAME: ${{ inputs.spoof_uname }}
           INPUT_VERSION_SPOOF: ${{ inputs.kernel_version_spoof }}
           INPUT_NOMOUNT: ${{ inputs.nomount }}
-          INPUT_FORCE_LATEST: ${{ inputs.force_latest }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           bash builder/scripts/build.sh
