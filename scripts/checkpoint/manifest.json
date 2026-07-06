@@ -29,7 +29,9 @@
   },
   "susfs4ksu": {
     "good": "9c84408f1623d6e5d5dbaddd984a2227b091d898",
-    "bad": []
+    "bad": [
+      "4674397c2e20256401b5db354a697b056809ffaa"
+    ]
   },
   "resukisu_root": {
     "good": "9a335d11d9ec8a99f1c37d8f13dd0ebaf85227aa",
