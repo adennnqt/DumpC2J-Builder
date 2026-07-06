@@ -60,7 +60,8 @@ for line in "${UPDATES[@]}"; do
   BODY_LINES="${BODY_LINES}${line}\n"
 done
 
-TEXT="${PICK_EMOJI} ${#UPDATES[@]} update(s) found — new commit detected\n\n$(printf '%b' "$BODY_LINES")"
+RAW_TEXT="${PICK_EMOJI} ${#UPDATES[@]} update(s) found -- new commit detected\n\n${BODY_LINES}"
+TEXT=$(printf '%b' "$RAW_TEXT")
 
 curl -s -X POST "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" \
   -d "chat_id=${TG_CHAT}" \
