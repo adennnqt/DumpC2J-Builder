@@ -23,6 +23,13 @@ case "$VARIANT" in
     -e CONFIG_KSU -e CONFIG_KSU_SUSFS -e CONFIG_KSU_SUSFS_SUS_MAP ;;
 esac
 
+# ReSukiSU: explicitly force multi-manager support (default=y upstream,
+# hardcoded here so it doesn't silently depend on Kconfig defaults that
+# could change upstream without DumpC2J noticing)
+if [ "$ROOT" == "resukisu" ] && [ "$VARIANT" != "stock" ]; then
+  "$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" -e CONFIG_KSU_MULTI_MANAGER_SUPPORT
+fi
+
 # KPM: enable for sukisu only
 if [ "$ROOT" == "sukisu" ]; then
   "$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" -e CONFIG_KPM
