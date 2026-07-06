@@ -1,6 +1,6 @@
 {
   "sukisu_root": {
-    "good": "0000000000000000000000000000000000000000",
+    "good": "88d619ed6159156ea3518822a947d0950891c138",
     "bad": []
   },
   "sukisu_susfs": {
@@ -8,7 +8,7 @@
     "bad": []
   },
   "resukisu_susfs": {
-    "good": "9a335d11d9ec8a99f1c37d8f13dd0ebaf85227aa",
+    "good": "",
     "bad": []
   },
   "ksunext_root": {
@@ -28,7 +28,7 @@
     "bad": []
   },
   "susfs4ksu": {
-    "good": "9c84408f1623d6e5d5dbaddd984a2227b091d898",
+    "good": "",
     "bad": []
   },
   "resukisu_root": {
