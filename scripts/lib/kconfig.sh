@@ -1,19 +1,14 @@
 #!/bin/bash
 set -e
 
-# ==========================================
-# Kernel config
-# ==========================================
 mkdir -p "$OUT_DIR"
 
 make -C "$KERNEL_DIR" O="$OUT_DIR" CC=clang LLVM=1 LLVM_IAS=1 \
   KCFLAGS="$KERNEL_KCFLAGS" LDFLAGS="$KERNEL_LDFLAGS" konoha_defconfig
 
-# Disable VDSO32 & COMPAT_VDSO (wajib untuk Cirrus)
 "$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" \
   -d CONFIG_VDSO32 -d CONFIG_COMPAT_VDSO
 
-# Root config
 case "$VARIANT" in
   stock) "$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" \
     -d CONFIG_KSU -d CONFIG_KSU_SUSFS -d CONFIG_KPM ;;
@@ -23,21 +18,16 @@ case "$VARIANT" in
     -e CONFIG_KSU -e CONFIG_KSU_SUSFS -e CONFIG_KSU_SUSFS_SUS_MAP ;;
 esac
 
-# ReSukiSU: explicitly force multi-manager support (default=y upstream,
-# hardcoded here so it doesn't silently depend on Kconfig defaults that
-# could change upstream without DumpC2J noticing)
 if [ "$ROOT" == "resukisu" ] && [ "$VARIANT" != "stock" ]; then
   "$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" -e CONFIG_KSU_MULTI_MANAGER_SUPPORT
 fi
 
-# KPM: enable for sukisu only
 if [ "$ROOT" == "sukisu" ]; then
   "$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" -e CONFIG_KPM
 else
   "$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" -d CONFIG_KPM
 fi
 
-# HZ config
 case "$HZ_ID" in
   100)  "$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" \
     -d CONFIG_HZ_300 -d CONFIG_HZ_250 -d CONFIG_HZ_500 -d CONFIG_HZ_1000 \
@@ -57,18 +47,15 @@ case "$HZ_ID" in
 esac
 
 
-# NoMount config
 if [ "$NOMOUNT" == "on" ]; then
     "$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" -e CONFIG_NOMOUNT
 else
     "$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" -d CONFIG_NOMOUNT
 fi
 
-# Hardened
 [ "$HARDENED" == "off" ] && "$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" \
   -d CONFIG_CPU_MITIGATIONS -d CONFIG_MITIGATE_SPECTRE_BRANCH_HISTORY
 
-# LTO
 case "$LTO_VAL" in
   full) "$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" \
     -d CONFIG_LTO_NONE -d CONFIG_LTO_CLANG_THIN -e CONFIG_LTO_CLANG -e CONFIG_LTO_CLANG_FULL ;;
@@ -78,7 +65,6 @@ case "$LTO_VAL" in
     -d CONFIG_LTO_NONE -d CONFIG_LTO_CLANG_FULL -e CONFIG_LTO_CLANG -e CONFIG_LTO_CLANG_THIN ;;
 esac
 
-# Debug reduction
 "$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" \
   -e CONFIG_DEBUG_INFO_REDUCED \
   -d CONFIG_DEBUG_MISC -d CONFIG_BT_DEBUGFS \
@@ -90,7 +76,6 @@ esac
   -d CONFIG_UBSAN_SANITIZE_ALL -d CONFIG_UBSAN_TRAP \
   -d CONFIG_CLEANCACHE -d CONFIG_PRINTK_TIME
 
-# Kernel version spoof
 if [ -n "$VERSION_SPOOF" ]; then
   echo "[*] Spoofing kernel version: $VERSION_SPOOF"
   IFS='.' read -r V PL SL <<< "$VERSION_SPOOF"
@@ -103,7 +88,6 @@ if [ -n "$VERSION_SPOOF" ]; then
   fi
 fi
 
-# Cmdline extras
 CURRENT_CMDLINE=$(grep '^CONFIG_CMDLINE=' "$OUT_DIR/.config" | sed 's/^CONFIG_CMDLINE="//' | sed 's/"$//')
 CMDLINE_APPEND=""
 echo "$CURRENT_CMDLINE" | grep -q "kasan=off" || CMDLINE_APPEND="$CMDLINE_APPEND kasan=off"
@@ -120,9 +104,7 @@ CMDLINE_APPEND="${CMDLINE_APPEND# }"
   "$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" \
   --set-str CONFIG_CMDLINE "${CURRENT_CMDLINE:+$CURRENT_CMDLINE }$CMDLINE_APPEND"
 
-# Droidspaces
 [ "$DROIDSPACES" == "on" ] && \
   bash "$KERNEL_DIR/setup_droidspaces.sh" "$OUT_DIR"
 
-# Finalize config
 make -C "$KERNEL_DIR" O="$OUT_DIR" CC=clang LLVM=1 LLVM_IAS=1 olddefconfig

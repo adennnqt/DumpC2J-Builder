@@ -1,17 +1,12 @@
 #!/bin/bash
 set -e
 
-
-# ==========================================
-# Verify image exists
 IMAGE_FOUND=0
 for img in Image.gz-dtb Image.gz Image; do
   [ -f "$ZIMAGE_DIR/$img" ] && { IMAGE_FOUND=1; break; }
 done
 [ "$IMAGE_FOUND" == "0" ] && { echo "[-] No kernel image found!"; return 1; }
 
-# Package
-# ==========================================
 : "${BUILD_START:?BUILD_START not set — check sourcing order}"
 TEMP_DIR="${GITHUB_WORKSPACE}/anykernel_temp"
 rm -rf "$TEMP_DIR"
@@ -21,7 +16,6 @@ for img in Image.gz-dtb Image.gz Image; do
   [ -f "$ZIMAGE_DIR/$img" ] && { cp -v "$ZIMAGE_DIR/$img" "$TEMP_DIR/"; break; }
 done
 
-# Build zip name (simple — semua detail lengkap ada di release notes)
 TIME=$(date "+%Y%m%d-%H%M")
 KVER=$(grep '^VERSION = ' "$KERNEL_DIR/Makefile" | awk '{print $3}')
 KPL=$(grep '^PATCHLEVEL = ' "$KERNEL_DIR/Makefile" | awk '{print $3}')

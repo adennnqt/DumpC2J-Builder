@@ -3,10 +3,6 @@ set -eE
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Trap ini nangkep kegagalan command APAPUN (termasuk yg gak eksplisit
-# di-guard di lib scripts) SEBELUM set -e sempet matiin proses secara
-# paksa. Tanpa ini, error gak terduga di tengah lib script bakal skip
-# total logic engine.sh failure di bawah.
 ENGINE_REPORTED=""
 report_failure_once() {
   [ -n "${PIN_KEY:-}" ] || return 0
@@ -25,8 +21,25 @@ report_failure_once() {
 }
 trap report_failure_once ERR
 
+LIB_ORDER=(
+  defaults.sh
+  adjust_inputs.sh
+  root_setup.sh
+  branding.sh
+  baseband_guard.sh
+  rekernel.sh
+  resukisu_fixes.sh
+  clang_flags.sh
+  ccache_setup.sh
+  kconfig.sh
+  compile.sh
+  package.sh
+  ccache_save.sh
+)
+
 run_all_libs() {
-  for f in "$SCRIPT_DIR"/lib/*.sh; do
+  for name in "${LIB_ORDER[@]}"; do
+    f="$SCRIPT_DIR/lib/$name"
     echo "[orchestrator] sourcing $(basename "$f")"
     source "$f" || return 1
   done

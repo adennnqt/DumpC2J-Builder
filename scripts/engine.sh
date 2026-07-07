@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
-# ======================================================
-# Engine — promote candidate kalau build sukses, blacklist kalau gagal
-# ======================================================
 set -eo pipefail
 
 BUILDER_DIR="${GITHUB_WORKSPACE}/builder"
@@ -54,9 +51,6 @@ apply_and_push() {
 
 if [ "$BUILD_OUTCOME" = "success" ]; then
     log "engine: promoting ${KEY} pin ke ${ref:0:12}"
-    # promote ke good, DAN bersihin SHA ini dari bad[] kalau ada (fix
-    # cleanup yang belum ada di versi temen — biar manifest gak nyimpen
-    # SHA yang sama di good & bad sekaligus)
     apply_and_push \
       ".${KEY}.good = \"${ref}\" | .${KEY}.bad -= [\"${ref}\"]" \
       "chore: bump ${KEY} pin to ${ref:0:12} (verified via run ${GITHUB_RUN_ID})"

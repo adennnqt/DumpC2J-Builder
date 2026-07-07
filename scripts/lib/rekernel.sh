@@ -1,12 +1,8 @@
 #!/bin/bash
 set -e
 
-# ==========================================
-# Re-Kernel Integration
-# ==========================================
 echo "[*] Integrating Re-Kernel..."
 
-# Tulis rekernel.h
 python3 -c "
 import os
 h = open('$KERNEL_DIR/drivers/android/rekernel.h', 'w')
@@ -15,13 +11,11 @@ h.close()
 print('[+] rekernel.h written')
 "
 
-# Patch binder.c dan signal.c via Python
 python3 << RKPY
 import sys
 
 import os; KERNEL_DIR = os.path.join(os.environ.get('GITHUB_WORKSPACE', ''), 'kernel-source')
 
-# === binder.c ===
 bc_path = f"{KERNEL_DIR}/drivers/android/binder.c"
 with open(bc_path) as f:
     bc = f.read()
@@ -53,7 +47,6 @@ if 'rekernel txn hook' not in bc:
 with open(bc_path, 'w') as f:
     f.write(bc)
 
-# === signal.c ===
 sc_path = f"{KERNEL_DIR}/kernel/signal.c"
 with open(sc_path) as f:
     sc = f.read()

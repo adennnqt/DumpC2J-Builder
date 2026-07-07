@@ -4,10 +4,6 @@ set -e
 #!/bin/bash
 set -e
 
-# ==========================================
-# DumpC2J Kernel Build Script (Builder repo)
-# ==========================================
-
 KERNEL_DIR="${GITHUB_WORKSPACE}/kernel-source"
 BUILDER_DIR="${GITHUB_WORKSPACE}/builder"
 ANYKERNEL_DIR="${GITHUB_WORKSPACE}/anykernel"
@@ -18,9 +14,6 @@ BUILD_START=$(date +"%s")
 
 VERSION="1.0"
 
-# ==========================================
-# Read inputs from env
-# ==========================================
 HZ="${INPUT_HZ:-250}"
 VARIANT="${INPUT_VARIANT:-stock}"
 ROOT="${INPUT_ROOT:-none}"
@@ -37,7 +30,6 @@ SPOOF_UNAME="${INPUT_SPOOF_UNAME:-on}"
 VERSION_SPOOF="${INPUT_VERSION_SPOOF:-}"
 NOMOUNT="${INPUT_NOMOUNT:-off}"
 
-# Map HZ label to number
 case "$HZ" in
   powersave) HZ_ID=100 ;;
   balance) HZ_ID=250 ;;
@@ -47,6 +39,5 @@ case "$HZ" in
   *) HZ_ID="${HZ}" ;;
 esac
 
-# Hostname spoof
 export KBUILD_BUILD_USER="adennnqt"
 export KBUILD_BUILD_HOST="DumpC2J"

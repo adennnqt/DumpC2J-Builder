@@ -1,9 +1,6 @@
 #!/bin/bash
 set -e
 
-# ==========================================
-# Baseband-guard
-# ==========================================
 BBG_DIR="$KERNEL_DIR/Baseband-guard"
 if [ ! -d "$BBG_DIR" ]; then
   git clone --depth=1 https://github.com/vc-teahouse/Baseband-guard.git "$BBG_DIR"

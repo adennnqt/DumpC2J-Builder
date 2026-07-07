@@ -1,9 +1,6 @@
 #!/bin/bash
 set -e
 
-# ==========================================
-# Adjust inputs
-# ==========================================
 [ "$VARIANT" == "stock" ] && ROOT="none"
 
 ACTUAL_ROOT="$ROOT"
@@ -14,9 +11,6 @@ LTO="${INPUT_LTO:-full}"
 LTO_VAL="$LTO"
 echo "LTO_ACTUAL=$LTO_VAL" >> "$GITHUB_ENV"
 
-# ==========================================
-# Guard: ReSukiSU wajib pakai variant SUSFS
-# ==========================================
 if [ "$ROOT" == "resukisu" ] && [ "$VARIANT" != "susfs" ]; then
   echo "[!] ERROR: ReSukiSU hanya didukung dengan Variant = susfs."
   echo "[!] Root-only (no susfs) untuk resukisu sengaja diblokir karena diketahui bikin freeze/reboot."
@@ -24,10 +18,6 @@ if [ "$ROOT" == "resukisu" ] && [ "$VARIANT" != "susfs" ]; then
   echo "[!] NOTE: informational only, proceeding (retest after execveat_init fix, commit 7667f76)."
 fi
 
-
-# ==========================================
-# Apply kernel name & spoof uname to defconfig
-# ==========================================
 cd "$KERNEL_DIR"
 
 echo "[*] Applying kernel name: $KERNEL_NAME"

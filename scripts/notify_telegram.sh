@@ -29,9 +29,6 @@ format_changelog() {
     subject=$(head -n1 <<< "$commit_body")
     echo "$subject" | grep -qi '\[ci\]' && continue
 
-    # "Changelog:" trailer override — "Changelog: skip" excludes the commit
-    # entirely from the notification (buat commit internal/debug yg gak
-    # relevan buat end-user). Isi lain menggantikan deskripsi auto-generated.
     trailer_val=$(grep -iP '^Changelog:\s*' <<< "$commit_body" | tail -1 | sed -E 's/^Changelog:\s*//I')
     if [ -n "$trailer_val" ]; then
       shopt -s nocasematch

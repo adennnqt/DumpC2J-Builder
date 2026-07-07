@@ -1,8 +1,6 @@
 #!/bin/bash
 set -e
 
-# ==========================================
-# ReSukiSU: fix ksu_init_rc_hook_key_false typo in ksud_integration.c
 if [ "$ROOT" == "resukisu" ]; then
   KSUD_INT="$MODULES_DIR/$REPO_NAME/kernel/runtime/ksud_integration.c"
   if [ -f "$KSUD_INT" ]; then
@@ -11,9 +9,6 @@ if [ "$ROOT" == "resukisu" ]; then
   fi
 fi
 
-# ReSukiSU susfs: define proc_unprivillege symbols as non-inline
-# (static inline breaks under LTO with external callers)
-# ==========================================
 if [ "$ROOT" == "resukisu" ]; then
   SUCOMPAT_IMPL="$MODULES_DIR/$REPO_NAME/kernel/feature/sucompat_proc_flag.c"
   if [ ! -f "$SUCOMPAT_IMPL" ]; then

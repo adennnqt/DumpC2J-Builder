@@ -1,9 +1,6 @@
 #!/bin/bash
 set -e
 
-# ==========================================
-# Build
-# ==========================================
 CPUS=$(nproc --all)
 echo "[+] Building with ${CPUS} threads..."
 

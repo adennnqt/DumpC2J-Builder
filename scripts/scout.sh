@@ -1,10 +1,4 @@
 #!/usr/bin/env bash
-# ======================================================
-# Scout — checkpoint recon buat DumpC2J (root + susfs per method)
-# ======================================================
-# RUN_MODE=Release: selalu pake pin manifest, gak pernah cek upstream.
-# RUN_MODE=Test/Warming: cek commit terbaru upstream, kalau beda dari
-#   pin dan belum di-blacklist, jadi candidate buat run ini.
 set -eo pipefail
 
 BUILDER_DIR="${GITHUB_WORKSPACE}/builder"
@@ -64,9 +58,6 @@ resolve_component() {
                 ref="$good"; candidate="false"
                 warn "${prefix}: latest ${latest:0:12} known-bad — fallback ke pinned ${good:0:12}"
             else
-                # deadlock-breaker: belum ada good pin & satu-satunya ref upstream
-                # udah di-blacklist -> retry sbg last-resort candidate biar bisa
-                # promote/re-blacklist berdasar hasil build nyata.
                 ref="$latest"; candidate="true"
                 warn "${prefix}: latest ${latest:0:12} known-bad & belum ada pin — retry sbg last-resort candidate"
             fi
@@ -80,7 +71,6 @@ resolve_component() {
     echo "CANDIDATE_${prefix}=${candidate}" >> "$GITHUB_ENV"
 }
 
-# ROOT dan VARIANT diambil dari env yang udah di-set 00_defaults.sh/01_adjust_inputs.sh
 case "$ROOT" in
   sukisu)
     if [ "$VARIANT" == "susfs" ]; then
@@ -129,10 +119,6 @@ case "$ROOT" in
     ;;
 esac
 
-# SUSFS patch source (GitLab simonpunk/susfs4ksu) — shared dependency
-# dipake semua root method pas VARIANT=susfs, di-track independen lewat
-# key manifest sendiri biar dapet proteksi pin/candidate/blacklist yang
-# sama kayak repo KernelSU fork di atas.
 if [ "$VARIANT" == "susfs" ]; then
   latest=$(latest_sha_or_empty "SuSFS (susfs4ksu, GitLab)" \
     "https://gitlab.com/api/v4/projects/simonpunk%2Fsusfs4ksu/repository/commits/gki-android15-6.6-dev" '.id')

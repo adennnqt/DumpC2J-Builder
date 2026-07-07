@@ -30,12 +30,6 @@ ccache --set-config=max_size="$CCACHE_MAXSIZE"
 ccache --set-config=compiler_check=content
 ccache -z
 
-# ==========================================
-# PATH shim — biar CC=clang lewat ccache
-# tanpa ubah CC= (LLVM=1 override CC= kalau
-# ccache dipasang lewat CC=, jadi kita cegat
-# via PATH sebelum clang asli ke-resolve)
-# ==========================================
 CCACHE_SHIM_DIR="${GITHUB_WORKSPACE}/.ccache-shim"
 mkdir -p "$CCACHE_SHIM_DIR"
 CCACHE_BIN="$(command -v ccache)"

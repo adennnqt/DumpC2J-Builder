@@ -1,15 +1,9 @@
 #!/bin/bash
 set -e
 
-# ==========================================
-# Export ARCH
-# ==========================================
 export ARCH=arm64
 export SUBARCH=arm64
 
-# ==========================================
-# Clang flags
-# ==========================================
 EXTREME_CLANG_FLAGS=(
   -O2 -mcpu=cortex-x4 -mtune=cortex-x4
   -mno-fmv -mno-outline-atomics -Wno-all
@@ -35,12 +29,8 @@ else
   KERNEL_LDFLAGS=""
 fi
 
-# ==========================================
-# Clang path
-# ==========================================
 export PATH="${CLANG_PATH}:$PATH"
 CLANG_BIN="${CLANG_PATH}/clang"
-# KBUILD_COMPILER_STRING already set by setup_clang.sh
 if [ -z "$KBUILD_COMPILER_STRING" ]; then
   echo "[-] KBUILD_COMPILER_STRING is empty — clang setup may have failed!"
   return 1
