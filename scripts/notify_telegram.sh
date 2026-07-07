@@ -11,9 +11,9 @@ get_raw_log() {
   local repo_dir="$1" tag_name="$2"
   (cd "$repo_dir" && git fetch origin --tags 2>/dev/null || true)
   if (cd "$repo_dir" && git rev-parse "$tag_name" >/dev/null 2>&1); then
-    (cd "$repo_dir" && git log "${tag_name}..HEAD" --no-merges --pretty=format:"%s" | grep -vi '\[ci\]' || true)
+    (cd "$repo_dir" && git log "${tag_name}..HEAD" --no-merges --pretty=format:"%B%x1e" || true)
   else
-    (cd "$repo_dir" && git log -10 --no-merges --pretty=format:"%s" | grep -vi '\[ci\]' || true)
+    (cd "$repo_dir" && git log -10 --no-merges --pretty=format:"%B%x1e" || true)
   fi
 }
 
@@ -22,18 +22,40 @@ format_changelog() {
   local -A groups
   local order=(added fixed changed)
   local -A labels=( [added]="✨ Added" [fixed]="🐛 Fixed" [changed]="🔧 Changed" )
-  local line type desc key
+  local commit_body subject type desc key trailer_val
 
-  while IFS= read -r line; do
-    [ -z "$line" ] && continue
-    type=$(echo "$line" | grep -oP '^[a-zA-Z]+(?=(\([^)]*\))?:)' || true)
+  while IFS= read -r -d $'\x1e' commit_body; do
+    [ -z "$commit_body" ] && continue
+    subject=$(head -n1 <<< "$commit_body")
+    echo "$subject" | grep -qi '\[ci\]' && continue
+
+    # "Changelog:" trailer override — "Changelog: skip" excludes the commit
+    # entirely from the notification (buat commit internal/debug yg gak
+    # relevan buat end-user). Isi lain menggantikan deskripsi auto-generated.
+    trailer_val=$(grep -iP '^Changelog:\s*' <<< "$commit_body" | tail -1 | sed -E 's/^Changelog:\s*//I')
+    if [ -n "$trailer_val" ]; then
+      shopt -s nocasematch
+      if [[ "$trailer_val" == "skip" ]]; then
+        shopt -u nocasematch
+        continue
+      fi
+      shopt -u nocasematch
+    fi
+
+    type=$(echo "$subject" | grep -oP '^[a-zA-Z]+(?=(\([^)]*\))?:)' || true)
     type=$(echo "$type" | tr '[:upper:]' '[:lower:]')
-    desc="$line"
-    while echo "$desc" | grep -qP '^[a-zA-Z]+(\([^)]*\))?:\s*'; do
-      desc=$(echo "$desc" | sed -E 's/^[a-zA-Z]+(\([^)]*\))?:\s*//')
-    done
+
+    if [ -n "$trailer_val" ]; then
+      desc="$trailer_val"
+    else
+      desc="$subject"
+      while echo "$desc" | grep -qP '^[a-zA-Z]+(\([^)]*\))?:\s*'; do
+        desc=$(echo "$desc" | sed -E 's/^[a-zA-Z]+(\([^)]*\))?:\s*//')
+      done
+    fi
     desc="$(tr '[:lower:]' '[:upper:]' <<< "${desc:0:1}")${desc:1}"
     desc=$(esc "$desc")
+
     case "$type" in
       feat) key="added" ;;
       fix)  key="fixed" ;;
