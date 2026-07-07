@@ -1,7 +1,29 @@
 #!/bin/bash
-set -e
+set -eE
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Trap ini nangkep kegagalan command APAPUN (termasuk yg gak eksplisit
+# di-guard di lib scripts) SEBELUM set -e sempet matiin proses secara
+# paksa. Tanpa ini, error gak terduga di tengah lib script bakal skip
+# total logic engine.sh failure di bawah.
+ENGINE_REPORTED=""
+report_failure_once() {
+  [ -n "${PIN_KEY:-}" ] || return 0
+  [ -z "$ENGINE_REPORTED" ] || return 0
+  ENGINE_REPORTED=1
+  local root_candidate_var="CANDIDATE_${PIN_PREFIX}"
+  local root_is_candidate="${!root_candidate_var:-false}"
+  local susfs_is_candidate="${CANDIDATE_SUSFS4KSU:-false}"
+  if [ "$root_is_candidate" == "true" ] && [ "$susfs_is_candidate" == "true" ]; then
+    echo "[!] Ambiguous failure (unguarded error): $PIN_KEY dan susfs4ksu sama-sama candidate baru — skip auto-blacklist. Cek manual."
+  else
+    [ "$root_is_candidate" == "true" ] && bash "${SCRIPT_DIR}/engine.sh" failure "$PIN_KEY" "$PIN_PREFIX"
+    [ "$susfs_is_candidate" == "true" ] && bash "${SCRIPT_DIR}/engine.sh" failure "susfs4ksu" "SUSFS4KSU"
+    true
+  fi
+}
+trap report_failure_once ERR
 
 run_all_libs() {
   for f in "$SCRIPT_DIR"/lib/*.sh; do
@@ -21,17 +43,7 @@ if [ -n "${PIN_KEY:-}" ]; then
     bash "${SCRIPT_DIR}/engine.sh" success "$PIN_KEY" "$PIN_PREFIX"
     bash "${SCRIPT_DIR}/engine.sh" success "susfs4ksu" "SUSFS4KSU"
   else
-    root_candidate_var="CANDIDATE_${PIN_PREFIX}"
-    root_is_candidate="${!root_candidate_var:-false}"
-    susfs_is_candidate="${CANDIDATE_SUSFS4KSU:-false}"
-
-    if [ "$root_is_candidate" == "true" ] && [ "$susfs_is_candidate" == "true" ]; then
-      echo "[!] Ambiguous failure: $PIN_KEY dan susfs4ksu sama-sama candidate baru di run ini — gak bisa nentuin siapa yg salah, skip auto-blacklist. Cek manual."
-    else
-      [ "$root_is_candidate" == "true" ] && bash "${SCRIPT_DIR}/engine.sh" failure "$PIN_KEY" "$PIN_PREFIX"
-      [ "$susfs_is_candidate" == "true" ] && bash "${SCRIPT_DIR}/engine.sh" failure "susfs4ksu" "SUSFS4KSU"
-      true
-    fi
+    report_failure_once
   fi
 fi
 
