@@ -13,4 +13,4 @@ make -C "$KERNEL_DIR" \
   OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip \
   LLVM=1 LLVM_IAS=1 \
   KCFLAGS="$KERNEL_KCFLAGS" LDFLAGS="$KERNEL_LDFLAGS" \
-  || { echo "[-] Build failed!"; exit 1; }
+  || { echo "[-] Build failed!"; return 1; }
