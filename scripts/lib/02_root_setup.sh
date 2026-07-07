@@ -32,7 +32,7 @@ else
   mkdir -p "$MODULES_DIR"
   REF_VAR="${PIN_PREFIX}_REF"
   RESOLVED_SHA="${!REF_VAR}"
-  [ -z "$RESOLVED_SHA" ] && { echo "[-] ERROR: ${REF_VAR} kosong — scout.sh belum jalan atau gagal resolve."; exit 1; }
+  [ -z "$RESOLVED_SHA" ] && { echo "[-] ERROR: ${REF_VAR} kosong — scout.sh belum jalan atau gagal resolve."; return 1; }
 
   if [ ! -d "$MODULES_DIR/$REPO_NAME" ]; then
     echo "[+] Cloning $REPO_NAME (full history, buat fallback)..."
@@ -53,7 +53,7 @@ else
     SUSFS_DIR="$MODULES_DIR/susfs4ksu"
     SUSFS_BRANCH="gki-android15-6.6-dev"
     SUSFS_TARGET_SHA="${SUSFS4KSU_REF:-}"
-    [ -z "$SUSFS_TARGET_SHA" ] && { echo "[-] ERROR: SUSFS4KSU_REF kosong — scout.sh belum jalan atau gagal resolve."; exit 1; }
+    [ -z "$SUSFS_TARGET_SHA" ] && { echo "[-] ERROR: SUSFS4KSU_REF kosong — scout.sh belum jalan atau gagal resolve."; return 1; }
 
     if [ ! -d "$SUSFS_DIR" ]; then
       git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH" "$SUSFS_DIR"

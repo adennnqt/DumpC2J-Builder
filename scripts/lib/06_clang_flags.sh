@@ -43,6 +43,6 @@ CLANG_BIN="${CLANG_PATH}/clang"
 # KBUILD_COMPILER_STRING already set by setup_clang.sh
 if [ -z "$KBUILD_COMPILER_STRING" ]; then
   echo "[-] KBUILD_COMPILER_STRING is empty — clang setup may have failed!"
-  exit 1
+  return 1
 fi
 echo "[+] Using Clang: $KBUILD_COMPILER_STRING"
