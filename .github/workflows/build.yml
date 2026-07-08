@@ -229,6 +229,13 @@ jobs:
           RUN_MODE: ${{ inputs.run_mode }}
         run: bash builder/scripts/scout.sh
 
+      - name: Setup ccache
+        env:
+          ACTUAL_ROOT: ${{ env.ACTUAL_ROOT }}
+          CLANG_VARIANT: ${{ inputs.clang_variant }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: bash builder/scripts/lib/ccache_setup.sh
+
       - name: Build Kernel
         env:
           INPUT_HZ: ${{ inputs.hz }}
@@ -250,6 +257,12 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           bash builder/scripts/build.sh
+
+      - name: Save ccache
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: bash builder/scripts/lib/ccache_save.sh
 
       - name: Set LTO Output
         id: lto_output

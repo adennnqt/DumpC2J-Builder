@@ -30,11 +30,9 @@ LIB_ORDER=(
   rekernel.sh
   resukisu_fixes.sh
   clang_flags.sh
-  ccache_setup.sh
   kconfig.sh
   compile.sh
   package.sh
-  ccache_save.sh
 )
 
 run_all_libs() {
