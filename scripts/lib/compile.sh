@@ -4,9 +4,6 @@ set -e
 CPUS=$(nproc --all)
 echo "[+] Building with ${CPUS} threads..."
 
-echo "[DEBUG] which clang: $(which clang)"
-echo "[DEBUG] resolved clang: $(readlink -f "$(which clang)")"
-echo "[DEBUG] PATH: $PATH"
 
 make -C "$KERNEL_DIR" \
   "-j${CPUS}" O="$OUT_DIR" \

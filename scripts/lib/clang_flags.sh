@@ -29,7 +29,7 @@ else
   KERNEL_LDFLAGS=""
 fi
 
-export PATH="${CLANG_PATH}:$PATH"
+export PATH="${GITHUB_WORKSPACE}/.ccache-shim:${CLANG_PATH}:$PATH"
 CLANG_BIN="${CLANG_PATH}/clang"
 if [ -z "$KBUILD_COMPILER_STRING" ]; then
   echo "[-] KBUILD_COMPILER_STRING is empty — clang setup may have failed!"
