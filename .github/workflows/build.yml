@@ -11,11 +11,8 @@ on:
       spoof_uname:
         description: "Spoof Uname (SUSFS/Stock Naming)"
         required: true
-        type: choice
-        options:
-          - "off"
-          - "on"
-        default: "off"
+        type: boolean
+        default: false
       clang_variant:
         description: "Clang Toolchain"
         required: true
@@ -69,19 +66,13 @@ on:
       bypasscharging:
         description: "Bypass Charging (MCA Override)"
         required: true
-        type: choice
-        options:
-          - "off"
-          - "on"
-        default: "on"
+        type: boolean
+        default: true
       droidspaces:
         description: "Droidspaces Support"
         required: true
-        type: choice
-        options:
-          - "off"
-          - "on"
-        default: "off"
+        type: boolean
+        default: false
       kernel_version_spoof:
         description: "Spoof Kernel Version (kosongkan = pakai upstream)"
         required: false
@@ -90,19 +81,13 @@ on:
       debug:
         description: "Debug Mode (nokaslr, no optimizations)"
         required: true
-        type: choice
-        options:
-          - "off"
-          - "on"
-        default: "off"
+        type: boolean
+        default: false
       nomount:
         description: "NoMount (VFS Path Injection, no mount table)"
         required: true
-        type: choice
-        options:
-          - "off"
-          - "on"
-        default: "off"
+        type: boolean
+        default: false
       run_mode:
         description: "Run Mode (Release=pinned only, Test=check upstream)"
         required: true
@@ -152,16 +137,16 @@ jobs:
           INPUT_VARIANT: ${{ inputs.variant }}
           INPUT_ROOT: ${{ inputs.root }}
           INPUT_HARDENED: "off"
-          INPUT_BYPASS: ${{ inputs.bypasscharging }}
-          INPUT_DROIDSPACES: ${{ inputs.droidspaces }}
+          INPUT_BYPASS: ${{ inputs.bypasscharging && 'on' || 'off' }}
+          INPUT_DROIDSPACES: ${{ inputs.droidspaces && 'on' || 'off' }}
           INPUT_HTSR: "on"
           INPUT_WIFI: "on"
           INPUT_KGSL: "on"
           INPUT_DATA: "on"
-          INPUT_DEBUG: ${{ inputs.debug }}
+          INPUT_DEBUG: ${{ inputs.debug && 'on' || 'off' }}
           INPUT_KERNEL_NAME: ${{ inputs.kernel_name }}
-          INPUT_SPOOF_UNAME: ${{ inputs.spoof_uname }}
-          INPUT_NOMOUNT: ${{ inputs.nomount }}
+          INPUT_SPOOF_UNAME: ${{ inputs.spoof_uname && 'on' || 'off' }}
+          INPUT_NOMOUNT: ${{ inputs.nomount && 'on' || 'off' }}
         run: |
           if [ "$INPUT_HZ" == "powersave" ]; then HZ_ID=100
           elif [ "$INPUT_HZ" == "balance" ]; then HZ_ID=250
@@ -247,13 +232,13 @@ jobs:
           INPUT_WIFI: "on"
           INPUT_KGSL: "on"
           INPUT_DATA: "on"
-          INPUT_BYPASS: ${{ inputs.bypasscharging }}
-          INPUT_DROIDSPACES: ${{ inputs.droidspaces }}
-          INPUT_DEBUG: ${{ inputs.debug }}
+          INPUT_BYPASS: ${{ inputs.bypasscharging && 'on' || 'off' }}
+          INPUT_DROIDSPACES: ${{ inputs.droidspaces && 'on' || 'off' }}
+          INPUT_DEBUG: ${{ inputs.debug && 'on' || 'off' }}
           INPUT_KERNEL_NAME: ${{ inputs.kernel_name }}
-          INPUT_SPOOF_UNAME: ${{ inputs.spoof_uname }}
+          INPUT_SPOOF_UNAME: ${{ inputs.spoof_uname && 'on' || 'off' }}
           INPUT_VERSION_SPOOF: ${{ inputs.kernel_version_spoof }}
-          INPUT_NOMOUNT: ${{ inputs.nomount }}
+          INPUT_NOMOUNT: ${{ inputs.nomount && 'on' || 'off' }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           bash builder/scripts/build.sh
@@ -281,4 +266,3 @@ jobs:
           name: DumpC2J-${{ env.BUILD_NAME }}
           path: kernel-source/DumpC2J-Release
           retention-days: 7
-
