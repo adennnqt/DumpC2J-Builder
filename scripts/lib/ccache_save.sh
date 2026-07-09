@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "[+] ccache stats after build:"
-ccache -s
+ccache -s -v
 
 TAR_PATH="/tmp/${CCACHE_ASSET}"
 tar --use-compress-program=zstdmt -cf "$TAR_PATH" -C "${GITHUB_WORKSPACE}" .ccache
