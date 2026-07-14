@@ -59,8 +59,12 @@ resolve_component() {
                 ref="$good"; candidate="false"
                 warn "${prefix}: latest ${latest:0:12} known-bad — fallback ke pinned ${good:0:12}"
             elif [ "$CANDIDATE_CLAIMED" = "true" ]; then
-                ref="$good"; candidate="false"
-                warn "${prefix}: known-bad & belum ada pin, tapi slot candidate run ini udah kepake komponen lain — skip dulu"
+                ref=""; candidate="false"
+                warn "${prefix}: known-bad, belum ada pin, & slot candidate run ini udah kepake komponen lain — skip komponen ini, tidak checkout apapun"
+                echo "SKIP_${prefix}=true" >> "$GITHUB_ENV"
+                echo "${prefix}_REF=${ref}" >> "$GITHUB_ENV"
+                echo "CANDIDATE_${prefix}=${candidate}" >> "$GITHUB_ENV"
+                return 0
             else
                 ref="$latest"; candidate="true"
                 CANDIDATE_CLAIMED="true"
@@ -68,8 +72,17 @@ resolve_component() {
             fi
         else
             if [ "$CANDIDATE_CLAIMED" = "true" ]; then
-                ref="$good"; candidate="false"
-                log "${prefix}: candidate baru ${latest:0:12} terdeteksi tapi ditunda — komponen lain lagi diuji run ini, pinned ${good:0:12} dulu"
+                if [ -n "$good" ]; then
+                    ref="$good"; candidate="false"
+                    log "${prefix}: candidate baru ${latest:0:12} terdeteksi tapi ditunda — komponen lain lagi diuji run ini, pinned ${good:0:12} dulu"
+                else
+                    ref=""; candidate="false"
+                    warn "${prefix}: candidate baru ${latest:0:12} terdeteksi tapi ditunda, dan belum ada pin sama sekali — skip komponen ini run ini"
+                    echo "SKIP_${prefix}=true" >> "$GITHUB_ENV"
+                    echo "${prefix}_REF=${ref}" >> "$GITHUB_ENV"
+                    echo "CANDIDATE_${prefix}=${candidate}" >> "$GITHUB_ENV"
+                    return 0
+                fi
             else
                 ref="$latest"; candidate="true"
                 CANDIDATE_CLAIMED="true"
