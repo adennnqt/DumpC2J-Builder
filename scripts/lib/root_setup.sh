@@ -30,6 +30,13 @@ if [ "$VARIANT" == "stock" ]; then
   touch "$KERNEL_DIR/drivers/kernelsu/Makefile"
 else
   mkdir -p "$MODULES_DIR"
+  SKIP_VAR="SKIP_${PIN_PREFIX}"
+  if [ "${!SKIP_VAR}" = "true" ]; then
+    echo "[!] ${PIN_KEY} di-skip run ini (belum ada pin & slot candidate kepake komponen lain) — tidak build variant ini."
+    echo "BUILD_SKIPPED=true" >> "$GITHUB_ENV"
+    return 0
+  fi
+
   REF_VAR="${PIN_PREFIX}_REF"
   RESOLVED_SHA="${!REF_VAR}"
   [ -z "$RESOLVED_SHA" ] && { echo "[-] ERROR: ${REF_VAR} kosong — scout.sh belum jalan atau gagal resolve."; return 1; }
@@ -50,6 +57,12 @@ else
   cd "$GITHUB_WORKSPACE"
 
   if [ "$VARIANT" == "susfs" ]; then
+    if [ "${SKIP_SUSFS4KSU:-}" = "true" ]; then
+      echo "[!] susfs4ksu di-skip run ini (belum ada pin & slot candidate kepake komponen lain) — tidak build variant ini."
+      echo "BUILD_SKIPPED=true" >> "$GITHUB_ENV"
+      return 0
+    fi
+
     SUSFS_DIR="$MODULES_DIR/susfs4ksu"
     SUSFS_BRANCH="gki-android15-6.6-dev"
     SUSFS_TARGET_SHA="${SUSFS4KSU_REF:-}"
