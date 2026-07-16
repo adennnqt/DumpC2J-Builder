@@ -7,9 +7,7 @@ if [ "$ROOT" == "resukisu" ]; then
     sed -i 's/ksu_init_rc_hook_key_false/ksu_is_init_rc_hook_enabled/g' "$KSUD_INT"
     echo "[*] ReSukiSU: fixed ksu_init_rc_hook_key_false typo"
   fi
-fi
 
-if [ "$ROOT" == "resukisu" ]; then
   SUCOMPAT_IMPL="$MODULES_DIR/$REPO_NAME/kernel/feature/sucompat_proc_flag.c"
   if [ ! -f "$SUCOMPAT_IMPL" ]; then
     echo "[*] Generating sucompat_proc_flag.c for ReSukiSU susfs LTO fix..."

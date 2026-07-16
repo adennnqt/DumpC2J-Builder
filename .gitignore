@@ -1,4 +1,4 @@
 *.bak
 *.orig
 *.py
-!scripts/*.py
+!scripts/**/*.py

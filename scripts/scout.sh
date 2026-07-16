@@ -117,24 +117,20 @@ case "$ROOT" in
     fi
     ;;
   ksu-next)
+    latest=$(latest_sha_or_empty "KernelSU-Next (dev)" \
+      "https://api.github.com/repos/KernelSU-Next/KernelSU-Next/commits/dev" '.sha')
     if [ "$VARIANT" == "susfs" ]; then
-      latest=$(latest_sha_or_empty "KernelSU-Next (dev)" \
-        "https://api.github.com/repos/KernelSU-Next/KernelSU-Next/commits/dev" '.sha')
       resolve_component "ksunext_susfs" "KSUNEXT_SUSFS" "$latest"
     else
-      latest=$(latest_sha_or_empty "KernelSU-Next (dev)" \
-        "https://api.github.com/repos/KernelSU-Next/KernelSU-Next/commits/dev" '.sha')
       resolve_component "ksunext_root" "KSUNEXT_ROOT" "$latest"
     fi
     ;;
   kowsu)
+    latest=$(latest_sha_or_empty "KOWX712-KernelSU (master)" \
+      "https://api.github.com/repos/KOWX712/KernelSU/commits/master" '.sha')
     if [ "$VARIANT" == "susfs" ]; then
-      latest=$(latest_sha_or_empty "KOWX712-KernelSU (master)" \
-        "https://api.github.com/repos/KOWX712/KernelSU/commits/master" '.sha')
       resolve_component "kowsu_susfs" "KOWSU_SUSFS" "$latest"
     else
-      latest=$(latest_sha_or_empty "KOWX712-KernelSU (master)" \
-        "https://api.github.com/repos/KOWX712/KernelSU/commits/master" '.sha')
       resolve_component "kowsu_root" "KOWSU_ROOT" "$latest"
     fi
     ;;
