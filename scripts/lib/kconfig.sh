@@ -114,7 +114,7 @@ make -C "$KERNEL_DIR" O="$OUT_DIR" CC=clang LLVM=1 LLVM_IAS=1 olddefconfig
 # in konoha_defconfig). Re-apply after olddefconfig so they always stick.
 if [ "$DROIDSPACES" == "on" ]; then
   "$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" \
-    -e CONFIG_SYSVIPC -e CONFIG_POSIX_MQUEUE -e CONFIG_IPC_NS -e CONFIG_PID_NS \
+    -e CONFIG_SYSVIPC -e CONFIG_POSIX_MQUEUE -e CONFIG_IPC_NS -e CONFIG_PID_NS -e CONFIG_USER_NS \
     -e CONFIG_DEVTMPFS -e CONFIG_NETFILTER_XT_MATCH_ADDRTYPE \
     -e CONFIG_NETFILTER_XT_TARGET_REJECT -e CONFIG_NETFILTER_XT_TARGET_LOG \
     -e CONFIG_NETFILTER_XT_MATCH_RECENT -e CONFIG_IP_SET \
