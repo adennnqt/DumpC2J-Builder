@@ -22,6 +22,7 @@ on:
           - cirrus
           - weebx
           - zyc
+          - aosp
         default: neutron
       hz:
         description: "Refresh Rate (HZ)"
