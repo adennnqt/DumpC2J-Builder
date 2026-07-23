@@ -34,19 +34,10 @@ case "${CLANG_VARIANT}" in
     COMPILER_STRING="Cirrus Clang ${GF_VERSION}"
     ;;
   aosp)
-    CONSTANTS_FILE="${GITHUB_WORKSPACE}/kernel-source/build.config.constants"
-    if [ ! -f "${CONSTANTS_FILE}" ]; then
-      echo "[!] build.config.constants not found at ${CONSTANTS_FILE}"
-      exit 1
-    fi
-    CLANG_VER=$(grep -oP '^CLANG_VERSION=\K.*' "${CONSTANTS_FILE}")
-    if [ -z "${CLANG_VER}" ]; then
-      echo "[!] CLANG_VERSION not found in build.config.constants"
-      exit 1
-    fi
-    AOSP_TAG="android-15.0.0_r1"
+    CLANG_VER="r596125"
+    AOSP_TAG="android-17.0.0_r1"
     AOSP_URL="https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/${AOSP_TAG}/clang-${CLANG_VER}.tar.gz"
-    echo "[*] AOSP clang pinned by kernel: ${CLANG_VER} (tag: ${AOSP_TAG})"
+    echo "[*] AOSP clang latest: ${CLANG_VER} (tag: ${AOSP_TAG})"
     mkdir -p "${HOME}/toolchains/aosp-clang"
     curl -Lo /tmp/aosp-clang.tar.gz "${AOSP_URL}" || { echo "[!] Failed to download AOSP clang ${CLANG_VER} from tag ${AOSP_TAG}"; exit 1; }
     tar -xf /tmp/aosp-clang.tar.gz -C "${HOME}/toolchains/aosp-clang"
