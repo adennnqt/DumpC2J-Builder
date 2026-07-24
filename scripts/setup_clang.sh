@@ -39,7 +39,7 @@ case "${CLANG_VARIANT}" in
     AOSP_URL="https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/${AOSP_TAG}/clang-${CLANG_VER}.tar.gz"
     echo "[*] AOSP clang latest: ${CLANG_VER} (tag: ${AOSP_TAG})"
     mkdir -p "${HOME}/toolchains/aosp-clang"
-    curl -fL --retry 5 --retry-delay 10 --retry-connrefused -o /tmp/aosp-clang.tar.gz "${AOSP_URL}" || { echo "[!] Failed to download AOSP clang ${CLANG_VER} from tag ${AOSP_TAG} after retries"; exit 1; }
+    curl -fL --retry 8 --retry-delay 15 --retry-all-errors --retry-connrefused --max-time 300 -o /tmp/aosp-clang.tar.gz "${AOSP_URL}" || { echo "[!] Failed to download AOSP clang ${CLANG_VER} from tag ${AOSP_TAG} after retries (server may be down for an extended period)"; exit 1; }
     tar -xf /tmp/aosp-clang.tar.gz -C "${HOME}/toolchains/aosp-clang"
     rm /tmp/aosp-clang.tar.gz
     CLANG_BIN="${HOME}/toolchains/aosp-clang/bin"
