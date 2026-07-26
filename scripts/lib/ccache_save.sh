@@ -1,6 +1,11 @@
 #!/bin/bash
 set -e
 
+if [ -z "${CCACHE_ASSET:-}" ] || [ ! -d "${GITHUB_WORKSPACE}/.ccache" ]; then
+  echo "[!] ccache was never set up this run (an earlier step likely failed first) — nothing to save, skipping."
+  exit 0
+fi
+
 echo "[+] ccache stats after build:"
 ccache -s -v
 
