@@ -246,6 +246,7 @@ jobs:
 
       - name: Save ccache
         if: always()
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: bash builder/scripts/lib/ccache_save.sh
