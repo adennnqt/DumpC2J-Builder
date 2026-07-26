@@ -217,8 +217,8 @@ jobs:
 
       - name: Setup ccache
         env:
-          ACTUAL_ROOT: ${{ env.ACTUAL_ROOT }}
           CLANG_VARIANT: ${{ inputs.clang_variant }}
+          LTO: ${{ inputs.lto }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: bash builder/scripts/lib/ccache_setup.sh
 
