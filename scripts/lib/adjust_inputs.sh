@@ -2,13 +2,10 @@
 set -e
 
 [ "$VARIANT" == "stock" ] && ROOT="none"
+echo "ACTUAL_ROOT=$ROOT" >> "$GITHUB_ENV"
 
-ACTUAL_ROOT="$ROOT"
-echo "ACTUAL_ROOT=$ACTUAL_ROOT" >> "$GITHUB_ENV"
-
-LTO="${INPUT_LTO:-full}"
-
-LTO_VAL="$LTO"
+# Named LTO_VAL (not LTO) because kconfig.sh consumes this exact variable name.
+LTO_VAL="${INPUT_LTO:-full}"
 echo "LTO_ACTUAL=$LTO_VAL" >> "$GITHUB_ENV"
 
 if [ "$ROOT" == "resukisu" ] && [ "$VARIANT" != "susfs" ]; then
@@ -19,7 +16,8 @@ cd "$KERNEL_DIR"
 
 echo "[*] Applying kernel name: $KERNEL_NAME"
 if [ -n "$KERNEL_NAME" ]; then
-  sed -i "s/CONFIG_LOCALVERSION=\".*\"/CONFIG_LOCALVERSION=\"$KERNEL_NAME\"/g" \
+  KERNEL_NAME_ESCAPED=$(printf '%s' "$KERNEL_NAME" | sed -e 's/[\/&]/\\&/g')
+  sed -i "s/CONFIG_LOCALVERSION=\".*\"/CONFIG_LOCALVERSION=\"$KERNEL_NAME_ESCAPED\"/g" \
     arch/arm64/configs/konoha_defconfig
 fi
 

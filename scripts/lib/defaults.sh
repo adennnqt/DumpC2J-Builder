@@ -9,8 +9,6 @@ ZIMAGE_DIR="${OUT_DIR}/arch/arm64/boot"
 MODULES_DIR="${KERNEL_DIR}/.root_modules"
 BUILD_START=$(date +"%s")
 
-VERSION="1.0"
-
 HZ="${INPUT_HZ:-250}"
 VARIANT="${INPUT_VARIANT:-stock}"
 ROOT="${INPUT_ROOT:-none}"

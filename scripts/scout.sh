@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 set -eo pipefail
 
 BUILDER_DIR="${GITHUB_WORKSPACE}/builder"

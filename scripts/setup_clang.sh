@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 set -e
 
 CLANG_VARIANT="${1:-neutron}"
