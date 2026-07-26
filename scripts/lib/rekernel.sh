@@ -15,6 +15,7 @@ python3 << RKPY
 import sys
 
 import os; KERNEL_DIR = os.path.join(os.environ.get('GITHUB_WORKSPACE', ''), 'kernel-source')
+anchors_missing = False
 
 bc_path = f"{KERNEL_DIR}/drivers/android/binder.c"
 with open(bc_path) as f:
@@ -35,6 +36,7 @@ if 'rekernel reply hook' not in bc:
         print("[+] binder.c: reply hook injected")
     else:
         print("[-] binder.c: reply anchor NOT FOUND", file=sys.stderr)
+        anchors_missing = True
 
 if 'rekernel txn hook' not in bc:
     anchor = '\t\tif (security_binder_transaction(proc->cred,'
@@ -43,6 +45,7 @@ if 'rekernel txn hook' not in bc:
         print("[+] binder.c: txn hook injected")
     else:
         print("[-] binder.c: txn anchor NOT FOUND", file=sys.stderr)
+        anchors_missing = True
 
 with open(bc_path, 'w') as f:
     f.write(bc)
@@ -64,9 +67,14 @@ if 'rekernel signal hook' not in sc:
         print("[+] signal.c: signal hook injected")
     else:
         print("[-] signal.c: anchor NOT FOUND", file=sys.stderr)
+        anchors_missing = True
 
 with open(sc_path, 'w') as f:
     f.write(sc)
+
+if anchors_missing:
+    print("[-] Re-Kernel patching FAILED: one or more anchors not found (kernel source likely diverged from what these patches expect)", file=sys.stderr)
+    sys.exit(1)
 
 print("[+] Re-Kernel patching done!")
 RKPY
