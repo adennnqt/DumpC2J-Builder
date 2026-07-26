@@ -9,7 +9,13 @@ if [ "$ROOT" == "resukisu" ]; then
   fi
 
   SUCOMPAT_IMPL="$MODULES_DIR/$REPO_NAME/kernel/feature/sucompat_proc_flag.c"
-  if [ ! -f "$SUCOMPAT_IMPL" ]; then
+  SUCOMPAT_KBUILD="$MODULES_DIR/$REPO_NAME/kernel/Kbuild"
+  # Check the Kbuild line, not just the .c file. The .c file is untracked and
+  # survives `git checkout -B` between runs, but Kbuild is tracked and gets
+  # reset to upstream on every checkout -- checking only for the .c file's
+  # existence silently drops the Kbuild line (and the fix) on every run after
+  # the first.
+  if ! grep -qF "feature/sucompat_proc_flag.o" "$SUCOMPAT_KBUILD" 2>/dev/null; then
     echo "[*] Generating sucompat_proc_flag.c for ReSukiSU susfs LTO fix..."
     cat > "$SUCOMPAT_IMPL" << 'SCEOF'
 #include <linux/types.h>
@@ -29,7 +35,7 @@ void ksu_clear_current_proc_unprivillege(void) {
     clear_thread_flag(TIF_PROC_NON_PRIVILEGE);
 }
 SCEOF
-    echo "kernelsu-objs += feature/sucompat_proc_flag.o" >> "$MODULES_DIR/$REPO_NAME/kernel/Kbuild"
+    echo "kernelsu-objs += feature/sucompat_proc_flag.o" >> "$SUCOMPAT_KBUILD"
     echo "[+] sucompat_proc_flag.c generated and added to Kbuild"
   fi
 fi
