@@ -97,9 +97,12 @@ else
       echo "[+] $REPO_NAME already has native SUSFS integration. Skipping patch..."
     else
       echo "[+] Patching $REPO_NAME for SUSFS..."
-      (cd "$MODULES_DIR/$REPO_NAME" && \
+      if ! (cd "$MODULES_DIR/$REPO_NAME" && \
         patch -p1 --forward -f --reject-file=- \
-        < "$SUSFS_DIR/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch" || true)
+        < "$SUSFS_DIR/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch"); then
+        echo "[-] ERROR: SUSFS patch failed to apply to $REPO_NAME (hunk mismatch or missing target) — aborting build instead of continuing without the patch."
+        return 1
+      fi
     fi
   fi
 
