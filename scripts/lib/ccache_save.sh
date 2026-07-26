@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 echo "[+] ccache stats after build:"
 ccache -s -v
@@ -16,7 +17,7 @@ if ! gh release view "$CCACHE_TAG" -R "$CCACHE_REPO" >/dev/null 2>&1; then
   echo "[+] Release tag ${CCACHE_TAG} belum ada, membuat..."
   gh release create "$CCACHE_TAG" -R "$CCACHE_REPO" \
     --title "ccache storage (do not delete)" \
-    --notes "Persistent ccache storage per root-method+clang variant. Auto-managed by CI." \
+    --notes "Persistent ccache storage per clang-variant+LTO mode. Auto-managed by CI." \
     --latest=false
 fi
 

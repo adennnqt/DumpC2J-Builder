@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 export CCACHE_DIR="${GITHUB_WORKSPACE}/.ccache"
 export CCACHE_BASEDIR="${GITHUB_WORKSPACE}"
@@ -14,7 +15,13 @@ echo "USE_CCACHE=${USE_CCACHE}" >> "$GITHUB_ENV"
 
 mkdir -p "$CCACHE_DIR"
 
-CCACHE_ASSET="ccache-${ACTUAL_ROOT}-${CLANG_VARIANT}.tar.zst"
+# Keyed on clang variant + LTO mode only -- NOT root method. Root method only
+# touches drivers/kernelsu; partitioning the whole cache by it threw away
+# reuse across the ~90%+ of the kernel tree that's identical regardless of
+# root method. LTO mode DOES change per-TU compile flags and previously
+# wasn't part of the key at all, so full/thin/none LTO builds silently shared
+# (and evicted each other from) one bucket.
+CCACHE_ASSET="ccache-${CLANG_VARIANT}-lto-${LTO:-full}.tar.zst"
 CCACHE_TAG="ccache-store"
 CCACHE_REPO="adennnqt/DumpC2J-Builder"
 
