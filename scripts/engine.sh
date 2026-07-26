@@ -30,7 +30,12 @@ apply_and_push() {
     local attempt=1 max_attempts=5
 
     while [ "$attempt" -le "$max_attempts" ]; do
-        run_quiet git fetch "$REMOTE" main
+        if ! git fetch -q "$REMOTE" main; then
+            warn "engine: git fetch failed (attempt ${attempt}/${max_attempts}) — retrying, NOT resetting onto stale data"
+            attempt=$(( attempt + 1 ))
+            sleep $(( RANDOM % 5 + 2 ))
+            continue
+        fi
         git reset -q --hard FETCH_HEAD
 
         jq "$jq_patch" "$MANIFEST" > "${MANIFEST}.tmp" && mv "${MANIFEST}.tmp" "$MANIFEST"
