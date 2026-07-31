@@ -9,23 +9,14 @@ fi
 echo "[+] ccache stats after build:"
 ccache -s -v
 
-TAR_PATH="/tmp/${CCACHE_ASSET}"
+CCACHE_OUT_DIR="${GITHUB_WORKSPACE}/ccache-out"
+mkdir -p "$CCACHE_OUT_DIR"
+TAR_PATH="${CCACHE_OUT_DIR}/${CCACHE_ASSET}"
 tar --use-compress-program=zstdmt -cf "$TAR_PATH" -C "${GITHUB_WORKSPACE}" .ccache
 
 SIZE_MB=$(du -m "$TAR_PATH" | cut -f1)
-echo "[+] ccache archive size: ${SIZE_MB} MB"
-if [ "$SIZE_MB" -gt 1900 ]; then
-  echo "::warning::ccache archive mendekati limit 2GB release asset (${SIZE_MB} MB)"
-fi
+echo "[+] Local ccache part size: ${SIZE_MB} MB"
 
-if ! gh release view "$CCACHE_TAG" -R "$CCACHE_REPO" >/dev/null 2>&1; then
-  echo "[+] Release tag ${CCACHE_TAG} belum ada, membuat..."
-  gh release create "$CCACHE_TAG" -R "$CCACHE_REPO" \
-    --title "ccache storage (do not delete)" \
-    --notes "Persistent ccache storage per clang-variant+LTO mode. Auto-managed by CI." \
-    --latest=false
-fi
-
-gh release upload "$CCACHE_TAG" "$TAR_PATH" -R "$CCACHE_REPO" --clobber
-echo "[+] ccache uploaded as ${CCACHE_ASSET}"
-rm -f "$TAR_PATH"
+echo "CCACHE_TAR_PATH=${TAR_PATH}" >> "$GITHUB_ENV"
+echo "CCACHE_OUT_DIR=${CCACHE_OUT_DIR}" >> "$GITHUB_ENV"
+echo "[+] ccache part siap di ${TAR_PATH} — publish langsung (single build) atau lewat job merge_ccache (matrix build)."
