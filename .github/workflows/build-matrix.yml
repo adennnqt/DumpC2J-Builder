@@ -1,4 +1,4 @@
-name: DumpC2J Kernel Builder
+name: DumpC2J Kernel Builder (Matrix)
 
 on:
   workflow_dispatch:
@@ -14,7 +14,7 @@ on:
         type: boolean
         default: false
       clang_variant:
-        description: "Clang Toolchain"
+        description: "Clang Toolchain (shared buat semua leg)"
         required: true
         type: choice
         options:
@@ -25,7 +25,7 @@ on:
           - aosp
         default: neutron
       hz:
-        description: "Refresh Rate (HZ)"
+        description: "Refresh Rate (HZ) (shared buat semua leg)"
         required: true
         type: choice
         options:
@@ -35,28 +35,13 @@ on:
           - performance
           - ultra-performance
         default: smooth
-      variant:
-        description: "Build Variant"
+      matrix_combos:
+        description: "Daftar variant:root, pisah koma. Contoh: susfs:sukisu,susfs:resukisu,root:ksu-next"
         required: true
-        type: choice
-        options:
-          - stock
-          - root
-          - susfs
-        default: stock
-      root:
-        description: "Root Method"
-        required: true
-        type: choice
-        options:
-          - none
-          - ksu-next
-          - kowsu
-          - sukisu
-          - resukisu
-        default: sukisu
+        type: string
+        default: "susfs:sukisu,susfs:resukisu"
       lto:
-        description: "LTO Mode"
+        description: "LTO Mode (shared buat semua leg)"
         required: true
         type: choice
         options:
@@ -97,26 +82,71 @@ on:
           - Release
           - Test
         default: Release
+      max_parallel:
+        description: "Berapa leg boleh jalan bareng"
+        required: true
+        type: choice
+        options:
+          - "1"
+          - "2"
+          - "3"
+          - "4"
+        default: "2"
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  generate_matrix:
+    name: "Generate Build Matrix"
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.gen.outputs.matrix }}
+    steps:
+      - name: Parse combos
+        id: gen
+        env:
+          COMBOS: ${{ inputs.matrix_combos }}
+        run: |
+          python3 -c "
+          import json, os
+          combos = os.environ['COMBOS'].strip()
+          pairs = [c.strip() for c in combos.split(',') if c.strip()]
+          out = []
+          for p in pairs:
+              if ':' not in p:
+                  raise SystemExit(f'combo invalid (harus variant:root): {p}')
+              variant, root = p.split(':', 1)
+              out.append({'variant': variant.strip(), 'root': root.strip()})
+          if not out:
+              raise SystemExit('matrix_combos kosong')
+          print('matrix=' + json.dumps(out))
+          " >> "$GITHUB_OUTPUT"
+
+      - name: Show generated matrix
+        run: echo '${{ steps.gen.outputs.matrix }}'
+
   build:
-    name: "Custom Build"
+    name: "Matrix Build"
+    needs: generate_matrix
     runs-on: ubuntu-24.04
     permissions:
       contents: write
+    strategy:
+      fail-fast: false
+      max-parallel: ${{ fromJson(inputs.max_parallel) }}
+      matrix:
+        include: ${{ fromJson(needs.generate_matrix.outputs.matrix) }}
     outputs:
       lto_actual: ${{ steps.lto_output.outputs.lto_actual }}
 
     steps:
       - name: Validate Input Combination
         run: |
-          if [ "${{ inputs.variant }}" == "root" ] && [ "${{ inputs.root }}" == "resukisu" ]; then
+          if [ "${{ matrix.variant }}" == "root" ] && [ "${{ matrix.root }}" == "resukisu" ]; then
             echo "::warning::ReSukiSU root-only (no susfs) has a known manager-open crash, still unresolved — see scripts/lib/adjust_inputs.sh for current status."
           fi
-          echo "[+] Input combination valid: variant=${{ inputs.variant }}, root=${{ inputs.root }}"
+          echo "[+] Leg valid: variant=${{ matrix.variant }}, root=${{ matrix.root }}"
 
       - name: Checkout Builder
         uses: actions/checkout@v4
@@ -135,8 +165,8 @@ jobs:
         id: setup_vars
         env:
           INPUT_HZ: ${{ inputs.hz }}
-          INPUT_VARIANT: ${{ inputs.variant }}
-          INPUT_ROOT: ${{ inputs.root }}
+          INPUT_VARIANT: ${{ matrix.variant }}
+          INPUT_ROOT: ${{ matrix.root }}
           INPUT_HARDENED: "off"
           INPUT_BYPASS: ${{ inputs.bypasscharging && 'on' || 'off' }}
           INPUT_DROIDSPACES: ${{ inputs.droidspaces && 'on' || 'off' }}
@@ -211,7 +241,7 @@ jobs:
       - name: Scout Checkpoint
         env:
           ROOT: ${{ env.ACTUAL_ROOT }}
-          VARIANT: ${{ inputs.variant }}
+          VARIANT: ${{ matrix.variant }}
           RUN_MODE: ${{ inputs.run_mode }}
         run: bash builder/scripts/scout.sh
 
@@ -225,8 +255,8 @@ jobs:
       - name: Build Kernel
         env:
           INPUT_HZ: ${{ inputs.hz }}
-          INPUT_VARIANT: ${{ inputs.variant }}
-          INPUT_ROOT: ${{ inputs.root }}
+          INPUT_VARIANT: ${{ matrix.variant }}
+          INPUT_ROOT: ${{ matrix.root }}
           INPUT_LTO: ${{ inputs.lto }}
           INPUT_HARDENED: "off"
           INPUT_HTSR: "on"
@@ -249,12 +279,14 @@ jobs:
         continue-on-error: true
         run: bash builder/scripts/lib/ccache_save.sh
 
-      - name: Publish ccache
+      - name: Upload ccache part
         if: always()
         continue-on-error: true
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: bash builder/scripts/merge_ccache.sh "$CCACHE_ASSET" "$CCACHE_OUT_DIR"
+        uses: actions/upload-artifact@v4
+        with:
+          name: ccache-part-${{ matrix.variant }}-${{ matrix.root }}
+          path: ${{ env.CCACHE_TAR_PATH }}
+          retention-days: 1
 
       - name: Set LTO Output
         id: lto_output
@@ -273,3 +305,29 @@ jobs:
           name: DumpC2J-${{ env.BUILD_NAME }}
           path: kernel-source/DumpC2J-Release
           retention-days: 7
+
+  merge_ccache:
+    name: "Merge & Publish ccache"
+    needs: build
+    if: always()
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Builder
+        uses: actions/checkout@v4
+        with:
+          path: builder
+
+      - name: Download all ccache parts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: ccache-part-*
+          path: ccache-parts
+
+      - name: Merge & publish
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          CCACHE_ASSET="ccache-${{ inputs.clang_variant }}-lto-${{ inputs.lto }}.tar.zst"
+          bash builder/scripts/merge_ccache.sh "$CCACHE_ASSET" ccache-parts
