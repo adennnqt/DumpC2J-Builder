@@ -14,7 +14,7 @@ on:
         type: boolean
         default: false
       clang_variant:
-        description: "Clang Toolchain (shared buat semua leg)"
+        description: "Clang Toolchain (shared across all builds)"
         required: true
         type: choice
         options:
@@ -25,7 +25,7 @@ on:
           - aosp
         default: neutron
       hz:
-        description: "Refresh Rate (HZ) (shared buat semua leg)"
+        description: "Refresh Rate (HZ) (shared across all builds)"
         required: true
         type: choice
         options:
@@ -35,13 +35,33 @@ on:
           - performance
           - ultra-performance
         default: smooth
-      matrix_combos:
-        description: "Daftar variant:root, pisah koma. Contoh: susfs:sukisu,susfs:resukisu,root:ksu-next"
+      combo_stock:
+        description: "Vanilla (No Root)"
         required: true
-        type: string
-        default: "susfs:sukisu,susfs:resukisu"
+        type: boolean
+        default: true
+      combo_susfs_sukisu:
+        description: "SUSFS - SukiSU"
+        required: true
+        type: boolean
+        default: true
+      combo_susfs_resukisu:
+        description: "SUSFS - ReSukiSU"
+        required: true
+        type: boolean
+        default: true
+      combo_susfs_ksunext:
+        description: "SUSFS - KSU-Next"
+        required: true
+        type: boolean
+        default: true
+      combo_susfs_kowsu:
+        description: "SUSFS - KOWSU"
+        required: true
+        type: boolean
+        default: true
       lto:
-        description: "LTO Mode (shared buat semua leg)"
+        description: "LTO Mode (shared across all builds)"
         required: true
         type: choice
         options:
@@ -60,7 +80,7 @@ on:
         type: boolean
         default: false
       kernel_version_spoof:
-        description: "Spoof Kernel Version (kosongkan = pakai upstream)"
+        description: "Spoof Kernel Version (leave blank to use upstream)"
         required: false
         type: string
         default: ""
@@ -82,16 +102,6 @@ on:
           - Release
           - Test
         default: Release
-      max_parallel:
-        description: "Berapa leg boleh jalan bareng"
-        required: true
-        type: choice
-        options:
-          - "1"
-          - "2"
-          - "3"
-          - "4"
-        default: "2"
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -103,23 +113,34 @@ jobs:
     outputs:
       matrix: ${{ steps.gen.outputs.matrix }}
     steps:
-      - name: Parse combos
+      - name: Build matrix from checked combos
         id: gen
         env:
-          COMBOS: ${{ inputs.matrix_combos }}
+          COMBO_STOCK: ${{ inputs.combo_stock }}
+          COMBO_SUSFS_SUKISU: ${{ inputs.combo_susfs_sukisu }}
+          COMBO_SUSFS_RESUKISU: ${{ inputs.combo_susfs_resukisu }}
+          COMBO_SUSFS_KSUNEXT: ${{ inputs.combo_susfs_ksunext }}
+          COMBO_SUSFS_KOWSU: ${{ inputs.combo_susfs_kowsu }}
         run: |
           python3 -c "
           import json, os
-          combos = os.environ['COMBOS'].strip()
-          pairs = [c.strip() for c in combos.split(',') if c.strip()]
+
+          combos = [
+              ('COMBO_STOCK', 'stock', 'none'),
+              ('COMBO_SUSFS_SUKISU', 'susfs', 'sukisu'),
+              ('COMBO_SUSFS_RESUKISU', 'susfs', 'resukisu'),
+              ('COMBO_SUSFS_KSUNEXT', 'susfs', 'ksu-next'),
+              ('COMBO_SUSFS_KOWSU', 'susfs', 'kowsu'),
+          ]
+
           out = []
-          for p in pairs:
-              if ':' not in p:
-                  raise SystemExit(f'combo invalid (harus variant:root): {p}')
-              variant, root = p.split(':', 1)
-              out.append({'variant': variant.strip(), 'root': root.strip()})
+          for env_key, variant, root in combos:
+              if os.environ.get(env_key) == 'true':
+                  out.append({'variant': variant, 'root': root})
+
           if not out:
-              raise SystemExit('matrix_combos kosong')
+              raise SystemExit('No combo was checked — check at least one.')
+
           print('matrix=' + json.dumps(out))
           " >> "$GITHUB_OUTPUT"
 
@@ -127,14 +148,14 @@ jobs:
         run: echo '${{ steps.gen.outputs.matrix }}'
 
   build:
-    name: "Matrix Build"
+    name: "Build"
     needs: generate_matrix
     runs-on: ubuntu-24.04
     permissions:
       contents: write
     strategy:
       fail-fast: false
-      max-parallel: ${{ fromJson(inputs.max_parallel) }}
+      max-parallel: 3
       matrix:
         include: ${{ fromJson(needs.generate_matrix.outputs.matrix) }}
     outputs:
@@ -146,7 +167,7 @@ jobs:
           if [ "${{ matrix.variant }}" == "root" ] && [ "${{ matrix.root }}" == "resukisu" ]; then
             echo "::warning::ReSukiSU root-only (no susfs) has a known manager-open crash, still unresolved — see scripts/lib/adjust_inputs.sh for current status."
           fi
-          echo "[+] Leg valid: variant=${{ matrix.variant }}, root=${{ matrix.root }}"
+          echo "[+] Build valid: variant=${{ matrix.variant }}, root=${{ matrix.root }}"
 
       - name: Checkout Builder
         uses: actions/checkout@v4

@@ -26,7 +26,7 @@ while IFS= read -r tarball; do
 done < <(find "$PARTS_DIR" -name '*.tar.zst' 2>/dev/null)
 
 if [ "$FOUND_ANY" == "0" ]; then
-  echo "[!] Gak ada ccache part ditemukan di ${PARTS_DIR} — semua leg kemungkinan gagal sebelum sempat save. Skip publish."
+  echo "[!] No ccache parts found in ${PARTS_DIR} — every build likely failed before it could save. Skipping publish."
   exit 0
 fi
 
@@ -35,13 +35,13 @@ tar --use-compress-program=zstdmt -cf "$TAR_PATH" -C "$MERGE_ROOT" .ccache
 
 SIZE_MB=$(du -m "$TAR_PATH" | cut -f1)
 PART_COUNT=$(find "$PARTS_DIR" -name '*.tar.zst' | wc -l)
-echo "[+] Merged ccache archive: ${SIZE_MB} MB (dari ${PART_COUNT} parts)"
+echo "[+] Merged ccache archive: ${SIZE_MB} MB (from ${PART_COUNT} parts)"
 if [ "$SIZE_MB" -gt 1900 ]; then
-  echo "::warning::ccache archive mendekati limit 2GB release asset (${SIZE_MB} MB)"
+  echo "::warning::ccache archive is approaching the 2GB release asset limit (${SIZE_MB} MB)"
 fi
 
 if ! gh release view "$CCACHE_TAG" -R "$CCACHE_REPO" >/dev/null 2>&1; then
-  echo "[+] Release tag ${CCACHE_TAG} belum ada, membuat..."
+  echo "[+] Release tag ${CCACHE_TAG} doesn't exist yet, creating..."
   gh release create "$CCACHE_TAG" -R "$CCACHE_REPO" \
     --title "ccache storage (do not delete)" \
     --notes "Persistent ccache storage per clang-variant+LTO mode. Auto-managed by CI." \
@@ -49,5 +49,5 @@ if ! gh release view "$CCACHE_TAG" -R "$CCACHE_REPO" >/dev/null 2>&1; then
 fi
 
 gh release upload "$CCACHE_TAG" "$TAR_PATH" -R "$CCACHE_REPO" --clobber
-echo "[+] Merged ccache uploaded as ${CCACHE_ASSET} — satu-satunya writer, no race."
+echo "[+] Merged ccache uploaded as ${CCACHE_ASSET} — the only writer, no race."
 rm -f "$TAR_PATH"

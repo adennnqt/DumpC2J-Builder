@@ -15,8 +15,8 @@ TAR_PATH="${CCACHE_OUT_DIR}/${CCACHE_ASSET}"
 tar --use-compress-program=zstdmt -cf "$TAR_PATH" -C "${GITHUB_WORKSPACE}" .ccache
 
 SIZE_MB=$(du -m "$TAR_PATH" | cut -f1)
-echo "[+] Local ccache part size: ${SIZE_MB} MB"
+echo "[+] Local ccache tar size: ${SIZE_MB} MB"
 
 echo "CCACHE_TAR_PATH=${TAR_PATH}" >> "$GITHUB_ENV"
 echo "CCACHE_OUT_DIR=${CCACHE_OUT_DIR}" >> "$GITHUB_ENV"
-echo "[+] ccache part siap di ${TAR_PATH} — publish langsung (single build) atau lewat job merge_ccache (matrix build)."
+echo "[+] ccache tar ready at ${TAR_PATH} — publish directly (single build) or via the merge_ccache job (matrix build)."
