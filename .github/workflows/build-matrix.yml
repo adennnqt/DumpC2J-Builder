@@ -155,7 +155,6 @@ jobs:
       contents: write
     strategy:
       fail-fast: false
-      max-parallel: 3
       matrix:
         include: ${{ fromJson(needs.generate_matrix.outputs.matrix) }}
     outputs:
