@@ -12,7 +12,6 @@ report_failure_once() {
   local root_candidate_var="CANDIDATE_${PIN_PREFIX}"
   local root_is_candidate="${!root_candidate_var:-false}"
   local susfs_key="susfs4ksu" susfs_prefix="SUSFS4KSU"
-  [ "$ROOT" == "ksu-next" ] && { susfs_key="susfs4ksu_ksunext"; susfs_prefix="SUSFS4KSU_KSUNEXT"; }
   local susfs_candidate_var="CANDIDATE_${susfs_prefix}"
   local susfs_is_candidate="${!susfs_candidate_var:-false}"
   echo "[!] Build failed during stage: ${stage}"
@@ -67,7 +66,6 @@ run_all_libs
 if [ -n "${PIN_KEY:-}" ]; then
   bash "${SCRIPT_DIR}/engine.sh" success "$PIN_KEY" "$PIN_PREFIX"
   susfs_key="susfs4ksu" susfs_prefix="SUSFS4KSU"
-  [ "$ROOT" == "ksu-next" ] && { susfs_key="susfs4ksu_ksunext"; susfs_prefix="SUSFS4KSU_KSUNEXT"; }
   bash "${SCRIPT_DIR}/engine.sh" success "$susfs_key" "$susfs_prefix"
 fi
 
