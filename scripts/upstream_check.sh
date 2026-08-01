@@ -14,8 +14,6 @@ SOURCES=(
   "resukisu_susfs|ReSukiSU (susfs)|https://api.github.com/repos/ReSukiSU/ReSukiSU/commits/main|.sha"
   "ksunext_root|KernelSU-Next (root)|https://api.github.com/repos/KernelSU-Next/KernelSU-Next/commits/dev|.sha"
   "ksunext_susfs|KernelSU-Next (susfs)|https://api.github.com/repos/KernelSU-Next/KernelSU-Next/commits/dev|.sha"
-  "kowsu_root|KOWSU (root)|https://api.github.com/repos/KOWX712/KernelSU/commits/master|.sha"
-  "kowsu_susfs|KOWSU (susfs)|https://api.github.com/repos/KOWX712/KernelSU/commits/master|.sha"
   "susfs4ksu|SUSFS4KSU (simon)|https://gitlab.com/api/v4/projects/simonpunk%2Fsusfs4ksu/repository/commits/gki-android15-6.6-dev|.id"
 )
 

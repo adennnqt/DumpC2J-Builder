@@ -19,16 +19,6 @@
     "good": "2ac220cac8010cdf89a230fd21890ca77b76c71a",
     "bad": []
   },
-  "kowsu_root": {
-    "good": "d42643347d3df844e8c83bfb8be61c33dbce3a48",
-    "bad": []
-  },
-  "kowsu_susfs": {
-    "good": "",
-    "bad": [
-      "72bd84056f905575c255445053b8a81d298312e8"
-    ]
-  },
   "susfs4ksu": {
     "good": "9c84408f1623d6e5d5dbaddd984a2227b091d898",
     "bad": [

@@ -165,15 +165,6 @@ case "$ROOT" in
       resolve_component "ksunext_root" "KSUNEXT_ROOT" "$latest" "$url"
     fi
     ;;
-  kowsu)
-    url="https://api.github.com/repos/KOWX712/KernelSU/commits/master"
-    latest=$(latest_sha_or_empty "KOWX712-KernelSU (master)" "$url" '.sha')
-    if [ "$VARIANT" == "susfs" ]; then
-      resolve_component "kowsu_susfs" "KOWSU_SUSFS" "$latest" "$url"
-    else
-      resolve_component "kowsu_root" "KOWSU_ROOT" "$latest" "$url"
-    fi
-    ;;
   *)
     log "scout: ROOT=none — nothing to track"
     ;;

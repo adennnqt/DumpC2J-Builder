@@ -18,9 +18,6 @@ case "$ROOT" in
       ROOT_REPO="https://github.com/KernelSU-Next/KernelSU-Next.git"; REPO_NAME="KernelSU-Next"; BRANCH="dev"
       PIN_KEY="ksunext_root"; PIN_PREFIX="KSUNEXT_ROOT"
     fi ;;
-  kowsu)    ROOT_REPO="https://github.com/KOWX712/KernelSU.git"; REPO_NAME="KOWX712-KernelSU"; BRANCH="master"
-            if [ "$VARIANT" == "susfs" ]; then PIN_KEY="kowsu_susfs"; PIN_PREFIX="KOWSU_SUSFS"
-            else PIN_KEY="kowsu_root"; PIN_PREFIX="KOWSU_ROOT"; fi ;;
   *)        REPO_NAME="none" ;;
 esac
 

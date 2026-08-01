@@ -55,11 +55,6 @@ on:
         required: true
         type: boolean
         default: true
-      combo_susfs_kowsu:
-        description: "SUSFS - KOWSU"
-        required: true
-        type: boolean
-        default: true
       lto:
         description: "LTO Mode (shared across all builds)"
         required: true
@@ -120,7 +115,6 @@ jobs:
           COMBO_SUSFS_SUKISU: ${{ inputs.combo_susfs_sukisu }}
           COMBO_SUSFS_RESUKISU: ${{ inputs.combo_susfs_resukisu }}
           COMBO_SUSFS_KSUNEXT: ${{ inputs.combo_susfs_ksunext }}
-          COMBO_SUSFS_KOWSU: ${{ inputs.combo_susfs_kowsu }}
         run: |
           python3 -c "
           import json, os
@@ -130,7 +124,6 @@ jobs:
               ('COMBO_SUSFS_SUKISU', 'susfs', 'sukisu'),
               ('COMBO_SUSFS_RESUKISU', 'susfs', 'resukisu'),
               ('COMBO_SUSFS_KSUNEXT', 'susfs', 'ksu-next'),
-              ('COMBO_SUSFS_KOWSU', 'susfs', 'kowsu'),
           ]
 
           out = []
