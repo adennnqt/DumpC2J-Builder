@@ -10,10 +10,9 @@ case "$ROOT" in
             else PIN_KEY="resukisu_root"; PIN_PREFIX="RESUKISU_ROOT"; fi ;;
   ksu-next)
     if [ "$VARIANT" == "susfs" ]; then
-      # pershoot fork: dipelihara khusus buat kompatibel sama SUSFS.
-      # Upstream KernelSU-Next/dev udah divergen & gak lagi cocok sama
-      # patch generic susfs4ksu (lihat commit histori Jul-Ags 2026).
-      ROOT_REPO="https://github.com/pershoot/KernelSU-Next.git"; REPO_NAME="KernelSU-Next"; BRANCH="next-susfs"
+      # pershoot fork tetap dipakai (upstream KernelSU-Next/dev belum native
+      # SUSFS), tapi branch yang benar adalah dev-susfs, bukan next-susfs.
+      ROOT_REPO="https://github.com/pershoot/KernelSU-Next.git"; REPO_NAME="KernelSU-Next"; BRANCH="dev-susfs"
       PIN_KEY="ksunext_susfs"; PIN_PREFIX="KSUNEXT_SUSFS"
     else
       ROOT_REPO="https://github.com/KernelSU-Next/KernelSU-Next.git"; REPO_NAME="KernelSU-Next"; BRANCH="dev"
@@ -65,18 +64,9 @@ else
   cd "$GITHUB_WORKSPACE"
 
   if [ "$VARIANT" == "susfs" ]; then
-    if [ "$ROOT" == "ksu-next" ]; then
-      # pershoot/KernelSU-Next (next-susfs) butuh SUSFS dari fork pershoot
-      # sendiri — simonpunk/susfs4ksu beda versi API, gagal compile kalau dipaksa
-      # (lihat: undeclared identifier CMD_SUSFS_*, DATA_ADB_* di core_hook.c).
-      SUSFS_REPO_URL="https://gitlab.com/pershoot/susfs4ksu.git"
-      SUSFS_SKIP_VAR="SKIP_SUSFS4KSU_KSUNEXT"
-      SUSFS_REF_VAR="SUSFS4KSU_KSUNEXT_REF"
-    else
-      SUSFS_REPO_URL="https://gitlab.com/simonpunk/susfs4ksu.git"
-      SUSFS_SKIP_VAR="SKIP_SUSFS4KSU"
-      SUSFS_REF_VAR="SUSFS4KSU_REF"
-    fi
+    SUSFS_REPO_URL="https://gitlab.com/simonpunk/susfs4ksu.git"
+    SUSFS_SKIP_VAR="SKIP_SUSFS4KSU"
+    SUSFS_REF_VAR="SUSFS4KSU_REF"
 
     if [ "${!SUSFS_SKIP_VAR:-}" = "true" ]; then
       echo "[!] ${SUSFS_REF_VAR%_REF} di-skip run ini (belum ada pin & slot candidate kepake komponen lain) — tidak build variant ini."
