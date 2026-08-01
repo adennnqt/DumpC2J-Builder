@@ -9,11 +9,10 @@ esc() { printf '%s' "$1" | sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/
 
 get_raw_log() {
   local repo_dir="$1" tag_name="$2"
-  local t0 t1
-  t0=$(date +%s)
-  (cd "$repo_dir" && git fetch origin --tags 2>/dev/null || true)
-  t1=$(date +%s)
-  echo "[timing] git fetch --tags (${repo_dir}) took $((t1 - t0))s" >&2
+  # Fetch cuma tag yang dibutuhin, bukan --tags (semua tag) — kernel-source
+  # bawa seluruh histori rilis Linux (ribuan tag), --tags narik semuanya
+  # dan bisa makan 10+ menit. Kita cuma butuh 1 ref ini buat diff changelog.
+  (cd "$repo_dir" && git fetch origin "+refs/tags/${tag_name}:refs/tags/${tag_name}" 2>/dev/null || true)
   if (cd "$repo_dir" && git rev-parse "$tag_name" >/dev/null 2>&1); then
     (cd "$repo_dir" && git log "${tag_name}..HEAD" --no-merges --pretty=format:"%B%x1e" || true)
   else
@@ -74,12 +73,10 @@ format_changelog() {
   printf '%s' "$out"
 }
 
-echo "[timing] starting changelog gen at $(date -u +%H:%M:%S)" >&2
 KERNEL_RAW=$(get_raw_log "$KERNEL_DIR" "dumpc2j-last-notified")
 BUILDER_RAW=$(get_raw_log "$BUILDER_DIR" "dumpc2j-builder-last-notified")
 KERNEL_CL=$(format_changelog "$KERNEL_RAW")
 BUILDER_CL=$(format_changelog "$BUILDER_RAW")
-echo "[timing] changelog gen done at $(date -u +%H:%M:%S)" >&2
 
 CHANGELOG_TEXT=""
 [ -n "$KERNEL_CL" ]  && CHANGELOG_TEXT="${CHANGELOG_TEXT}<b>🧬 Kernel Changes:</b>\n${KERNEL_CL}\n"
@@ -125,13 +122,11 @@ CAPTION="🔧 <b>DumpC2J Kernel Build</b>
 🔢 ${HZ_ID} Hz · ⏱️ ${DUR_TEXT}
 🔐 <code>${SHA256_SHORT}</code>"
 
-echo "[timing] starting Telegram sendDocument upload at $(date -u +%H:%M:%S), file size: $(du -h "$ZIP_PATH" | cut -f1)" >&2
 SEND_DOC=$(curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDocument" \
   -F chat_id="${TELEGRAM_CHAT_ID}" \
   -F parse_mode="HTML" \
   -F caption="${CAPTION}" \
   -F document=@"${ZIP_PATH}")
-echo "[timing] Telegram sendDocument upload done at $(date -u +%H:%M:%S)" >&2
 
 if ! echo "$SEND_DOC" | grep -q '"ok":true'; then
   echo "[✗] Failed to upload file to Telegram. Response:"
