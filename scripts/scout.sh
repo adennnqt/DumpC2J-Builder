@@ -35,15 +35,35 @@ latest_sha_or_empty() {
     echo "$sha"
 }
 
+# NEW: cek apakah sebuah SHA masih beneran ada di remote (nyegah pin orphaned
+# gara-gara force-push/history-rewrite upstream kayak kasus kowsu_susfs).
+ref_exists() {
+    local url_template="$1" sha="$2"
+    local check_url http_code
+    [ -n "$sha" ] && [ "$sha" != "null" ] || return 1
+    check_url="${url_template%/*}/${sha}"
+    http_code=$(curl -sL -o /dev/null -w '%{http_code}' --max-time 15 "$check_url" 2>/dev/null) || return 1
+    [ "$http_code" = "200" ]
+}
+
 resolve_component() {
-    local key="$1" prefix="$2" latest="$3"
+    local key="$1" prefix="$2" latest="$3" url_template="$4"
     local good bad_list is_bad ref candidate
 
     good=$(jq -r ".${key}.good" "$MANIFEST")
     bad_list=$(jq -c ".${key}.bad" "$MANIFEST")
 
+    # NEW: kalau pin "good" ternyata udah ilang dari remote, jangan dipaksa
+    # dipake — treat kayak belum ada pin sama sekali.
+    if [ -n "$good" ] && [ "$good" != "null" ] && [ -n "$url_template" ]; then
+        if ! ref_exists "$url_template" "$good"; then
+            warn "${prefix}: pinned good ${good:0:12} udah gak ada di remote (force-push/rewrite upstream?) — treat sbg belum-ada-pin"
+            good=""
+        fi
+    fi
+
     if [ "${RUN_MODE^^}" = "RELEASE" ]; then
-        [ -n "$good" ] || error "scout: RUN_MODE=Release tapi belum ada pin ${key} — run Test dulu."
+        [ -n "$good" ] || error "scout: RUN_MODE=Release tapi belum ada pin ${key} yang valid — run Test dulu."
         ref="$good"; candidate="false"
         log "${prefix}: Release mode — pinned ${ref:0:12}"
     elif [ -z "$latest" ]; then
@@ -98,40 +118,40 @@ resolve_component() {
 case "$ROOT" in
   sukisu)
     if [ "$VARIANT" == "susfs" ]; then
-      latest=$(latest_sha_or_empty "SukiSU-Ultra (builtin)" \
-        "https://api.github.com/repos/SukiSU-Ultra/SukiSU-Ultra/commits/builtin" '.sha')
-      resolve_component "sukisu_susfs" "SUKISU_SUSFS" "$latest"
+      url="https://api.github.com/repos/SukiSU-Ultra/SukiSU-Ultra/commits/builtin"
+      latest=$(latest_sha_or_empty "SukiSU-Ultra (builtin)" "$url" '.sha')
+      resolve_component "sukisu_susfs" "SUKISU_SUSFS" "$latest" "$url"
     else
-      latest=$(latest_sha_or_empty "SukiSU-Ultra (main)" \
-        "https://api.github.com/repos/SukiSU-Ultra/SukiSU-Ultra/commits/main" '.sha')
-      resolve_component "sukisu_root" "SUKISU_ROOT" "$latest"
+      url="https://api.github.com/repos/SukiSU-Ultra/SukiSU-Ultra/commits/main"
+      latest=$(latest_sha_or_empty "SukiSU-Ultra (main)" "$url" '.sha')
+      resolve_component "sukisu_root" "SUKISU_ROOT" "$latest" "$url"
     fi
     ;;
   resukisu)
-    latest=$(latest_sha_or_empty "ReSukiSU (main)" \
-      "https://api.github.com/repos/ReSukiSU/ReSukiSU/commits/main" '.sha')
+    url="https://api.github.com/repos/ReSukiSU/ReSukiSU/commits/main"
+    latest=$(latest_sha_or_empty "ReSukiSU (main)" "$url" '.sha')
     if [ "$VARIANT" == "susfs" ]; then
-      resolve_component "resukisu_susfs" "RESUKISU_SUSFS" "$latest"
+      resolve_component "resukisu_susfs" "RESUKISU_SUSFS" "$latest" "$url"
     else
-      resolve_component "resukisu_root" "RESUKISU_ROOT" "$latest"
+      resolve_component "resukisu_root" "RESUKISU_ROOT" "$latest" "$url"
     fi
     ;;
   ksu-next)
-    latest=$(latest_sha_or_empty "KernelSU-Next (dev)" \
-      "https://api.github.com/repos/KernelSU-Next/KernelSU-Next/commits/dev" '.sha')
+    url="https://api.github.com/repos/KernelSU-Next/KernelSU-Next/commits/dev"
+    latest=$(latest_sha_or_empty "KernelSU-Next (dev)" "$url" '.sha')
     if [ "$VARIANT" == "susfs" ]; then
-      resolve_component "ksunext_susfs" "KSUNEXT_SUSFS" "$latest"
+      resolve_component "ksunext_susfs" "KSUNEXT_SUSFS" "$latest" "$url"
     else
-      resolve_component "ksunext_root" "KSUNEXT_ROOT" "$latest"
+      resolve_component "ksunext_root" "KSUNEXT_ROOT" "$latest" "$url"
     fi
     ;;
   kowsu)
-    latest=$(latest_sha_or_empty "KOWX712-KernelSU (master)" \
-      "https://api.github.com/repos/KOWX712/KernelSU/commits/master" '.sha')
+    url="https://api.github.com/repos/KOWX712/KernelSU/commits/master"
+    latest=$(latest_sha_or_empty "KOWX712-KernelSU (master)" "$url" '.sha')
     if [ "$VARIANT" == "susfs" ]; then
-      resolve_component "kowsu_susfs" "KOWSU_SUSFS" "$latest"
+      resolve_component "kowsu_susfs" "KOWSU_SUSFS" "$latest" "$url"
     else
-      resolve_component "kowsu_root" "KOWSU_ROOT" "$latest"
+      resolve_component "kowsu_root" "KOWSU_ROOT" "$latest" "$url"
     fi
     ;;
   *)
@@ -140,7 +160,7 @@ case "$ROOT" in
 esac
 
 if [ "$VARIANT" == "susfs" ]; then
-  latest=$(latest_sha_or_empty "SuSFS (susfs4ksu, GitLab)" \
-    "https://gitlab.com/api/v4/projects/simonpunk%2Fsusfs4ksu/repository/commits/gki-android15-6.6-dev" '.id')
-  resolve_component "susfs4ksu" "SUSFS4KSU" "$latest"
+  url="https://gitlab.com/api/v4/projects/simonpunk%2Fsusfs4ksu/repository/commits/gki-android15-6.6-dev"
+  latest=$(latest_sha_or_empty "SuSFS (susfs4ksu, GitLab)" "$url" '.id')
+  resolve_component "susfs4ksu" "SUSFS4KSU" "$latest" "$url"
 fi
