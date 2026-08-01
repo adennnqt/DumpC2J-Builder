@@ -113,8 +113,6 @@ BUILD_DATE=$(date -u "+%Y-%m-%d %H:%M UTC")
 DUR="${BUILD_DURATION_SEC:-0}"
 DUR_TEXT="$((DUR / 60))m $((DUR % 60))s"
 
-[ "${ROOT_FALLBACK_USED:-false}" == "true" ] && FALLBACK_NOTE="⚠️ <b>Fallback used</b> — latest root method commit failed to build, automatically used last known-good commit.\n\n" || FALLBACK_NOTE=""
-
 CAPTION="🔧 <b>DumpC2J Kernel Build</b>
 
 📦 <code>${KERNEL_VER}</code> · ${VARIANT_LABEL}
@@ -138,7 +136,7 @@ MSG_ID=$(echo "$SEND_DOC" | jq -r '.result.message_id')
 
 DETAIL="📋 <b>Build Detail</b>
 
-$(printf '%b' "$FALLBACK_NOTE")<b>Specs:</b>
+<b>Specs:</b>
 📦 Version: <code>${KERNEL_VER}</code>
 🌿 Variant: ${VARIANT_LABEL}
 🔢 HZ: ${HZ_ID} Hz
