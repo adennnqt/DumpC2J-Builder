@@ -125,7 +125,7 @@ jobs:
 
       - name: Clone Kernel Source
         run: |
-          git clone --depth=50 \
+          git clone --depth=50 --filter=blob:none \
             --branch main \
             https://${{ secrets.GH_TOKEN }}@github.com/adennnqt/DumpC2J-Kernel \
             kernel-source
