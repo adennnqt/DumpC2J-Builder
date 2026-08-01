@@ -8,9 +8,17 @@ case "$ROOT" in
   resukisu) ROOT_REPO="https://github.com/ReSukiSU/ReSukiSU.git"; REPO_NAME="ReSukiSU"; BRANCH="main"
             if [ "$VARIANT" == "susfs" ]; then PIN_KEY="resukisu_susfs"; PIN_PREFIX="RESUKISU_SUSFS"
             else PIN_KEY="resukisu_root"; PIN_PREFIX="RESUKISU_ROOT"; fi ;;
-  ksu-next) ROOT_REPO="https://github.com/KernelSU-Next/KernelSU-Next.git"; REPO_NAME="KernelSU-Next"; BRANCH="dev"
-            if [ "$VARIANT" == "susfs" ]; then PIN_KEY="ksunext_susfs"; PIN_PREFIX="KSUNEXT_SUSFS"
-            else PIN_KEY="ksunext_root"; PIN_PREFIX="KSUNEXT_ROOT"; fi ;;
+  ksu-next)
+    if [ "$VARIANT" == "susfs" ]; then
+      # pershoot fork: dipelihara khusus buat kompatibel sama SUSFS.
+      # Upstream KernelSU-Next/dev udah divergen & gak lagi cocok sama
+      # patch generic susfs4ksu (lihat commit histori Jul-Ags 2026).
+      ROOT_REPO="https://github.com/pershoot/KernelSU-Next.git"; REPO_NAME="KernelSU-Next"; BRANCH="next-susfs"
+      PIN_KEY="ksunext_susfs"; PIN_PREFIX="KSUNEXT_SUSFS"
+    else
+      ROOT_REPO="https://github.com/KernelSU-Next/KernelSU-Next.git"; REPO_NAME="KernelSU-Next"; BRANCH="dev"
+      PIN_KEY="ksunext_root"; PIN_PREFIX="KSUNEXT_ROOT"
+    fi ;;
   kowsu)    ROOT_REPO="https://github.com/KOWX712/KernelSU.git"; REPO_NAME="KOWX712-KernelSU"; BRANCH="master"
             if [ "$VARIANT" == "susfs" ]; then PIN_KEY="kowsu_susfs"; PIN_PREFIX="KOWSU_SUSFS"
             else PIN_KEY="kowsu_root"; PIN_PREFIX="KOWSU_ROOT"; fi ;;

@@ -137,11 +137,13 @@ case "$ROOT" in
     fi
     ;;
   ksu-next)
-    url="https://api.github.com/repos/KernelSU-Next/KernelSU-Next/commits/dev"
-    latest=$(latest_sha_or_empty "KernelSU-Next (dev)" "$url" '.sha')
     if [ "$VARIANT" == "susfs" ]; then
+      url="https://api.github.com/repos/pershoot/KernelSU-Next/commits/next-susfs"
+      latest=$(latest_sha_or_empty "pershoot/KernelSU-Next (next-susfs)" "$url" '.sha')
       resolve_component "ksunext_susfs" "KSUNEXT_SUSFS" "$latest" "$url"
     else
+      url="https://api.github.com/repos/KernelSU-Next/KernelSU-Next/commits/dev"
+      latest=$(latest_sha_or_empty "KernelSU-Next (dev)" "$url" '.sha')
       resolve_component "ksunext_root" "KSUNEXT_ROOT" "$latest" "$url"
     fi
     ;;
