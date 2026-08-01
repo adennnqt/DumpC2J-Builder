@@ -162,7 +162,13 @@ case "$ROOT" in
 esac
 
 if [ "$VARIANT" == "susfs" ]; then
-  url="https://gitlab.com/api/v4/projects/simonpunk%2Fsusfs4ksu/repository/commits/gki-android15-6.6-dev"
-  latest=$(latest_sha_or_empty "SuSFS (susfs4ksu, GitLab)" "$url" '.id')
-  resolve_component "susfs4ksu" "SUSFS4KSU" "$latest" "$url"
+  if [ "$ROOT" == "ksu-next" ]; then
+    url="https://gitlab.com/api/v4/projects/pershoot%2Fsusfs4ksu/repository/commits/gki-android15-6.6-dev"
+    latest=$(latest_sha_or_empty "SuSFS pershoot fork (susfs4ksu, GitLab)" "$url" '.id')
+    resolve_component "susfs4ksu_ksunext" "SUSFS4KSU_KSUNEXT" "$latest" "$url"
+  else
+    url="https://gitlab.com/api/v4/projects/simonpunk%2Fsusfs4ksu/repository/commits/gki-android15-6.6-dev"
+    latest=$(latest_sha_or_empty "SuSFS (susfs4ksu, GitLab)" "$url" '.id')
+    resolve_component "susfs4ksu" "SUSFS4KSU" "$latest" "$url"
+  fi
 fi

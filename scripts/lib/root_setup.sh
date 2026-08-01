@@ -65,21 +65,34 @@ else
   cd "$GITHUB_WORKSPACE"
 
   if [ "$VARIANT" == "susfs" ]; then
-    if [ "${SKIP_SUSFS4KSU:-}" = "true" ]; then
-      echo "[!] susfs4ksu di-skip run ini (belum ada pin & slot candidate kepake komponen lain) — tidak build variant ini."
+    if [ "$ROOT" == "ksu-next" ]; then
+      # pershoot/KernelSU-Next (next-susfs) butuh SUSFS dari fork pershoot
+      # sendiri — simonpunk/susfs4ksu beda versi API, gagal compile kalau dipaksa
+      # (lihat: undeclared identifier CMD_SUSFS_*, DATA_ADB_* di core_hook.c).
+      SUSFS_REPO_URL="https://gitlab.com/pershoot/susfs4ksu.git"
+      SUSFS_SKIP_VAR="SKIP_SUSFS4KSU_KSUNEXT"
+      SUSFS_REF_VAR="SUSFS4KSU_KSUNEXT_REF"
+    else
+      SUSFS_REPO_URL="https://gitlab.com/simonpunk/susfs4ksu.git"
+      SUSFS_SKIP_VAR="SKIP_SUSFS4KSU"
+      SUSFS_REF_VAR="SUSFS4KSU_REF"
+    fi
+
+    if [ "${!SUSFS_SKIP_VAR:-}" = "true" ]; then
+      echo "[!] ${SUSFS_REF_VAR%_REF} di-skip run ini (belum ada pin & slot candidate kepake komponen lain) — tidak build variant ini."
       echo "BUILD_SKIPPED=true" >> "$GITHUB_ENV"
       return 0
     fi
 
     SUSFS_DIR="$MODULES_DIR/susfs4ksu"
     SUSFS_BRANCH="gki-android15-6.6-dev"
-    SUSFS_TARGET_SHA="${SUSFS4KSU_REF:-}"
-    [ -z "$SUSFS_TARGET_SHA" ] && { echo "[-] ERROR: SUSFS4KSU_REF kosong — scout.sh belum jalan atau gagal resolve."; return 1; }
+    SUSFS_TARGET_SHA="${!SUSFS_REF_VAR:-}"
+    [ -z "$SUSFS_TARGET_SHA" ] && { echo "[-] ERROR: ${SUSFS_REF_VAR} kosong — scout.sh belum jalan atau gagal resolve."; return 1; }
 
     if [ ! -d "$SUSFS_DIR" ]; then
-      git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH" "$SUSFS_DIR"
+      git clone "$SUSFS_REPO_URL" -b "$SUSFS_BRANCH" "$SUSFS_DIR"
     else
-      (cd "$SUSFS_DIR" && git fetch origin "$SUSFS_BRANCH")
+      (cd "$SUSFS_DIR" && git remote set-url origin "$SUSFS_REPO_URL" && git fetch origin "$SUSFS_BRANCH")
     fi
 
     echo "[+] Checkout susfs4ksu @ ${SUSFS_TARGET_SHA:0:8} (dari scout.sh)"
