@@ -35,15 +35,33 @@ latest_sha_or_empty() {
     echo "$sha"
 }
 
-# NEW: cek apakah sebuah SHA masih beneran ada di remote (nyegah pin orphaned
-# gara-gara force-push/history-rewrite upstream kayak kasus kowsu_susfs).
+# NEW: cek apakah sebuah SHA masih REACHABLE dari branch yang bakal di-clone
+# (bukan cuma "masih ada di database" — GitHub nyimpen commit dangling abis
+# force-push sampe ~90 hari, jadi GET /commits/{sha} tetep 200 walau commit
+# itu udah gak nyambung ke branch manapun & gagal di-checkout pas clone).
+# Pake Compare API: kalau sha itu ancestor dari branch tip -> reachable.
 ref_exists() {
     local url_template="$1" sha="$2"
-    local check_url http_code
+    local repo_base branch compare_url status
     [ -n "$sha" ] && [ "$sha" != "null" ] || return 1
-    check_url="${url_template%/*}/${sha}"
-    http_code=$(curl -sL -o /dev/null -w '%{http_code}' --max-time 15 "$check_url" 2>/dev/null) || return 1
-    [ "$http_code" = "200" ]
+
+    case "$url_template" in
+        *api.github.com*/commits/*)
+            repo_base="${url_template%/commits/*}"
+            branch="${url_template##*/commits/}"
+            compare_url="${repo_base}/compare/${branch}...${sha}"
+            status=$(curl -sL --max-time 15 "$compare_url" 2>/dev/null | jq -r '.status // empty')
+            [ "$status" = "identical" ] || [ "$status" = "behind" ]
+            ;;
+        *)
+            # Non-GitHub (GitLab dst) — fallback ke cek existence sederhana,
+            # cukup buat sumber yang jarang di-force-push (SUSFS upstream).
+            local check_url http_code
+            check_url="${url_template%/*}/${sha}"
+            http_code=$(curl -sL -o /dev/null -w '%{http_code}' --max-time 15 "$check_url" 2>/dev/null) || return 1
+            [ "$http_code" = "200" ]
+            ;;
+    esac
 }
 
 resolve_component() {
