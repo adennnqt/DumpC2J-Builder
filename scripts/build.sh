@@ -8,14 +8,16 @@ report_failure_once() {
   [ -n "${PIN_KEY:-}" ] || return 0
   [ -z "$ENGINE_REPORTED" ] || return 0
   ENGINE_REPORTED=1
+  local stage="${CURRENT_BUILD_STAGE:-unknown}"
   local root_candidate_var="CANDIDATE_${PIN_PREFIX}"
   local root_is_candidate="${!root_candidate_var:-false}"
   local susfs_is_candidate="${CANDIDATE_SUSFS4KSU:-false}"
+  echo "[!] Build failed during stage: ${stage}"
   if [ "$root_is_candidate" == "true" ] && [ "$susfs_is_candidate" == "true" ]; then
     echo "[!] Ambiguous failure (unguarded error): $PIN_KEY dan susfs4ksu sama-sama candidate baru — skip auto-blacklist. Cek manual."
   else
-    [ "$root_is_candidate" == "true" ] && bash "${SCRIPT_DIR}/engine.sh" failure "$PIN_KEY" "$PIN_PREFIX"
-    [ "$susfs_is_candidate" == "true" ] && bash "${SCRIPT_DIR}/engine.sh" failure "susfs4ksu" "SUSFS4KSU"
+    [ "$root_is_candidate" == "true" ] && bash "${SCRIPT_DIR}/engine.sh" failure "$PIN_KEY" "$PIN_PREFIX" "$stage"
+    [ "$susfs_is_candidate" == "true" ] && bash "${SCRIPT_DIR}/engine.sh" failure "susfs4ksu" "SUSFS4KSU" "$stage"
     true
   fi
 }
@@ -38,6 +40,7 @@ LIB_ORDER=(
 run_all_libs() {
   for name in "${LIB_ORDER[@]}"; do
     f="$SCRIPT_DIR/lib/$name"
+    CURRENT_BUILD_STAGE="$name"
     echo "[orchestrator] sourcing $(basename "$f")"
     source "$f"
   done

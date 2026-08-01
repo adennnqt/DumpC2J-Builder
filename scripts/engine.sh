@@ -7,6 +7,7 @@ source "${BUILDER_DIR}/scripts/functions.sh"
 BUILD_OUTCOME="$1"   # "success" | "failure"
 KEY="$2"              # ex: sukisu_root
 PREFIX="$3"           # ex: SUKISU_ROOT
+STAGE="${4:-unknown}" # nama lib script tempat build gagal (kalau failure)
 
 MANIFEST_REL="scripts/checkpoint/manifest.json"
 MANIFEST="${BUILDER_DIR}/${MANIFEST_REL}"
@@ -60,8 +61,8 @@ if [ "$BUILD_OUTCOME" = "success" ]; then
       ".${KEY}.good = \"${ref}\" | .${KEY}.bad -= [\"${ref}\"]" \
       "chore: bump ${KEY} pin to ${ref:0:12} (verified via run ${GITHUB_RUN_ID})"
 else
-    warn "engine: blacklisting ${KEY} candidate ${ref:0:12} (build failed)"
+    warn "engine: blacklisting ${KEY} candidate ${ref:0:12} (build failed at stage: ${STAGE})"
     apply_and_push \
       ".${KEY}.bad |= (. + [\"${ref}\"] | unique)" \
-      "chore: mark ${KEY} candidate ${ref:0:12} as known-bad (run ${GITHUB_RUN_ID})"
+      "chore: mark ${KEY} candidate ${ref:0:12} as known-bad (failed at ${STAGE}, run ${GITHUB_RUN_ID})"
 fi
