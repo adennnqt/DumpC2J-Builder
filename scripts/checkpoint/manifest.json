@@ -27,9 +27,7 @@
   },
   "kowsu_susfs": {
     "good": "cfac3be332ae8fe71d3d541b323ffeb742aed295",
-    "bad": [
-      "72bd84056f905575c255445053b8a81d298312e8"
-    ]
+    "bad": []
   },
   "susfs4ksu": {
     "good": "9c84408f1623d6e5d5dbaddd984a2227b091d898",
