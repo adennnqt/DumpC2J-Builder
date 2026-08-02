@@ -132,6 +132,21 @@ fi
 
 MSG_ID=$(echo "$SEND_DOC" | jq -r '.result.message_id')
 
+KASUMI_MODULE_ZIP=$(find "${KERNEL_DIR}/DumpC2J-Release" -maxdepth 1 -name "Kasumi-Module-*.zip" | head -1)
+if [ -n "$KASUMI_MODULE_ZIP" ]; then
+  SEND_KASUMI=$(curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDocument" \
+    -F chat_id="${TELEGRAM_CHAT_ID}" \
+    -F reply_to_message_id="${MSG_ID}" \
+    -F caption="🧩 Kasumi LKM module (install via KernelSU Manager, then toggle on)" \
+    -F document=@"${KASUMI_MODULE_ZIP}")
+  if ! echo "$SEND_KASUMI" | grep -q '"ok":true'; then
+    echo "[!] Failed to upload Kasumi module to Telegram. Response:"
+    echo "$SEND_KASUMI"
+  else
+    echo "[+] Kasumi module sent to Telegram: $(basename "$KASUMI_MODULE_ZIP")"
+  fi
+fi
+
 DETAIL="📋 <b>Build Detail</b>
 
 <b>Specs:</b>
