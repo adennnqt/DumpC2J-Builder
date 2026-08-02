@@ -29,5 +29,6 @@ if [ -z "$KASUMI_KO" ]; then
 fi
 
 cp "$KASUMI_KO" "${GITHUB_WORKSPACE}/kasumi_lkm.ko"
-echo "KASUMI_KO_PATH=${GITHUB_WORKSPACE}/kasumi_lkm.ko" >> "$GITHUB_ENV"
+export KASUMI_KO_PATH="${GITHUB_WORKSPACE}/kasumi_lkm.ko"
+echo "KASUMI_KO_PATH=${KASUMI_KO_PATH}" >> "$GITHUB_ENV"
 echo "[+] Kasumi LKM built: $(basename "$KASUMI_KO")"
