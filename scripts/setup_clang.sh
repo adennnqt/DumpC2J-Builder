@@ -31,8 +31,18 @@ case "${CLANG_VARIANT}" in
     cd "${HOME}/toolchains/neutron-clang"
     curl -Lo antman https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman
     chmod +x antman
-    ./antman -S
-    ./antman --patch=glibc
+    for i in 1 2 3; do
+      ./antman -S && break
+      echo "[!] antman -S failed (attempt ${i}/3), retrying in 15s..."
+      sleep 15
+      [ "${i}" -eq 3 ] && { echo "[!] antman -S failed after 3 attempts"; exit 1; }
+    done
+    for i in 1 2 3; do
+      ./antman --patch=glibc && break
+      echo "[!] antman --patch=glibc failed (attempt ${i}/3), retrying in 15s..."
+      sleep 15
+      [ "${i}" -eq 3 ] && { echo "[!] antman --patch=glibc failed after 3 attempts"; exit 1; }
+    done
     CLANG_BIN="${HOME}/toolchains/neutron-clang/bin"
     NEUTRON_VER=$("${CLANG_BIN}/clang" --version | head -n1 | grep -oP 'clang version \K[0-9.]+' || echo "latest")
     COMPILER_STRING="Neutron Clang ${NEUTRON_VER}"
