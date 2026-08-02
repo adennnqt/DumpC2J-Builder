@@ -16,6 +16,11 @@ for img in Image.gz-dtb Image.gz Image; do
   [ -f "$ZIMAGE_DIR/$img" ] && { cp -v "$ZIMAGE_DIR/$img" "$TEMP_DIR/"; break; }
 done
 
+if [ -n "${KASUMI_KO_PATH:-}" ] && [ -f "$KASUMI_KO_PATH" ]; then
+  cp "$KASUMI_KO_PATH" "$TEMP_DIR/kasumi_lkm.ko"
+  echo "[+] Kasumi LKM bundled into package"
+fi
+
 TIME=$(date "+%Y%m%d-%H%M")
 KVER=$(grep '^VERSION = ' "$KERNEL_DIR/Makefile" | awk '{print $3}')
 KPL=$(grep '^PATCHLEVEL = ' "$KERNEL_DIR/Makefile" | awk '{print $3}')

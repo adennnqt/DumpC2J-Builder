@@ -36,6 +36,7 @@ LIB_ORDER=(
   clang_flags.sh
   kconfig.sh
   compile.sh
+  kasumi.sh
   package.sh
 )
 
