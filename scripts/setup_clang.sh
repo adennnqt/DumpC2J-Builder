@@ -2,6 +2,26 @@
 set -e
 
 CLANG_VARIANT="${1:-neutron}"
+TOOLCHAIN_DIR="${HOME}/toolchains/${CLANG_VARIANT}-clang"
+
+if [ "${CLANG_VARIANT}" != "neutron" ] && [ -x "${TOOLCHAIN_DIR}/bin/clang" ]; then
+  CLANG_BIN="${TOOLCHAIN_DIR}/bin"
+  VER=$("${CLANG_BIN}/clang" --version | head -n1 | grep -oP 'clang version \K[0-9.]+' || echo "cached")
+  case "${CLANG_VARIANT}" in
+    cirrus) COMPILER_STRING="Cirrus Clang ${VER}" ;;
+    aosp)   COMPILER_STRING="AOSP Clang ${VER}" ;;
+    weebx)  COMPILER_STRING="WeebX Clang ${VER}" ;;
+    zyc)    COMPILER_STRING="ZyC Clang ${VER}" ;;
+    *)      COMPILER_STRING="${CLANG_VARIANT} Clang ${VER}" ;;
+  esac
+  echo "CLANG_VARIANT=${CLANG_VARIANT}" >> "${GITHUB_ENV}"
+  echo "CLANG_PATH=${CLANG_BIN}" >> "${GITHUB_ENV}"
+  echo "${CLANG_BIN}" >> "${GITHUB_PATH}"
+  echo "KBUILD_COMPILER_STRING=${COMPILER_STRING}" >> "${GITHUB_ENV}"
+  echo "[+] Clang ready (cached): ${CLANG_BIN}"
+  "${CLANG_BIN}/clang" --version
+  exit 0
+fi
 
 echo "[*] Setting up Clang: ${CLANG_VARIANT}"
 
