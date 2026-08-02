@@ -10,8 +10,6 @@ case "$ROOT" in
             else PIN_KEY="resukisu_root"; PIN_PREFIX="RESUKISU_ROOT"; fi ;;
   ksu-next)
     if [ "$VARIANT" == "susfs" ]; then
-      # pershoot fork tetap dipakai (upstream KernelSU-Next/dev belum native
-      # SUSFS), tapi branch yang benar adalah dev-susfs, bukan next-susfs.
       ROOT_REPO="https://github.com/pershoot/KernelSU-Next.git"; REPO_NAME="KernelSU-Next"; BRANCH="dev-susfs"
       PIN_KEY="ksunext_susfs"; PIN_PREFIX="KSUNEXT_SUSFS"
     else

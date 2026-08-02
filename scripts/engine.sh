@@ -4,10 +4,10 @@ set -eo pipefail
 BUILDER_DIR="${GITHUB_WORKSPACE}/builder"
 source "${BUILDER_DIR}/scripts/functions.sh"
 
-BUILD_OUTCOME="$1"   # "success" | "failure"
-KEY="$2"              # ex: sukisu_root
-PREFIX="$3"           # ex: SUKISU_ROOT
-STAGE="${4:-unknown}" # nama lib script tempat build gagal (kalau failure)
+BUILD_OUTCOME="$1"
+KEY="$2"
+PREFIX="$3"
+STAGE="${4:-unknown}"
 
 MANIFEST_REL="scripts/checkpoint/manifest.json"
 MANIFEST="${BUILDER_DIR}/${MANIFEST_REL}"

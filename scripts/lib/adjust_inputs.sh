@@ -4,7 +4,6 @@ set -e
 [ "$VARIANT" == "stock" ] && ROOT="none"
 echo "ACTUAL_ROOT=$ROOT" >> "$GITHUB_ENV"
 
-# Named LTO_VAL (not LTO) because kconfig.sh consumes this exact variable name.
 LTO_VAL="${INPUT_LTO:-full}"
 echo "LTO_ACTUAL=$LTO_VAL" >> "$GITHUB_ENV"
 

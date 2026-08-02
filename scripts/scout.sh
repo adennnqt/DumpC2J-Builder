@@ -35,11 +35,6 @@ latest_sha_or_empty() {
     echo "$sha"
 }
 
-# NEW: cek apakah sebuah SHA masih REACHABLE dari branch yang bakal di-clone
-# (bukan cuma "masih ada di database" — GitHub nyimpen commit dangling abis
-# force-push sampe ~90 hari, jadi GET /commits/{sha} tetep 200 walau commit
-# itu udah gak nyambung ke branch manapun & gagal di-checkout pas clone).
-# Pake Compare API: kalau sha itu ancestor dari branch tip -> reachable.
 ref_exists() {
     local url_template="$1" sha="$2"
     local repo_base branch compare_url status
@@ -54,8 +49,6 @@ ref_exists() {
             [ "$status" = "identical" ] || [ "$status" = "behind" ]
             ;;
         *)
-            # Non-GitHub (GitLab dst) — fallback ke cek existence sederhana,
-            # cukup buat sumber yang jarang di-force-push (SUSFS upstream).
             local check_url http_code
             check_url="${url_template%/*}/${sha}"
             http_code=$(curl -sL -o /dev/null -w '%{http_code}' --max-time 15 "$check_url" 2>/dev/null) || return 1
@@ -71,8 +64,6 @@ resolve_component() {
     good=$(jq -r ".${key}.good" "$MANIFEST")
     bad_list=$(jq -c ".${key}.bad" "$MANIFEST")
 
-    # NEW: kalau pin "good" ternyata udah ilang dari remote, jangan dipaksa
-    # dipake — treat kayak belum ada pin sama sekali.
     if [ -n "$good" ] && [ "$good" != "null" ] && [ -n "$url_template" ]; then
         if ! ref_exists "$url_template" "$good"; then
             warn "${prefix}: pinned good ${good:0:12} udah gak ada di remote (force-push/rewrite upstream?) — treat sbg belum-ada-pin"

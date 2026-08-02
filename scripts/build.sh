@@ -48,20 +48,7 @@ run_all_libs() {
   done
 }
 
-# NOTE: run_all_libs is intentionally called as a bare statement, NEVER as the
-# tested operand of if/&&/||. In bash, when a function call (or `source`) is
-# the direct operand of a conditional, `set -e`/`trap ... ERR` are suppressed
-# for EVERYTHING executed inside it -- including anything further sourced from
-# within. That previously let failing commands inside lib/*.sh (e.g. a failed
-# git clone, or `make defconfig`/`make olddefconfig` with no explicit `return`
-# guard) pass through completely silently and get reported as BUILD_OK=true.
-# Verified empirically: `if run_all_libs; then` swallows failures; a bare
-# `run_all_libs` call lets set -eE + `trap ... ERR` work correctly again.
-# On failure here, the ERR trap (report_failure_once) fires and the script
-# exits immediately -- everything below this point only runs on full success.
 run_all_libs
-# Only reached if every lib script in LIB_ORDER succeeded -- any failure above
-# is caught by `trap report_failure_once ERR` and exits the script directly.
 
 if [ -n "${PIN_KEY:-}" ]; then
   bash "${SCRIPT_DIR}/engine.sh" success "$PIN_KEY" "$PIN_PREFIX"

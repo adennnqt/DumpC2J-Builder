@@ -9,9 +9,6 @@ esc() { printf '%s' "$1" | sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/
 
 get_raw_log() {
   local repo_dir="$1" tag_name="$2"
-  # Fetch cuma tag yang dibutuhin, bukan --tags (semua tag) — kernel-source
-  # bawa seluruh histori rilis Linux (ribuan tag), --tags narik semuanya
-  # dan bisa makan 10+ menit. Kita cuma butuh 1 ref ini buat diff changelog.
   (cd "$repo_dir" && git fetch origin "+refs/tags/${tag_name}:refs/tags/${tag_name}" 2>/dev/null || true)
   if (cd "$repo_dir" && git rev-parse "$tag_name" >/dev/null 2>&1); then
     (cd "$repo_dir" && git log "${tag_name}..HEAD" --no-merges --pretty=format:"%B%x1e" || true)
