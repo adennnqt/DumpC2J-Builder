@@ -241,6 +241,16 @@ jobs:
             rsync schedtool squashfs-tools xsltproc zip zlib1g-dev \
             python3 clang lld llvm jq
 
+      - name: Get Cache Week
+        id: cacheweek
+        run: echo "week=$(date -u +%G-W%V)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Clang Toolchain
+        uses: actions/cache@v4
+        with:
+          path: ~/toolchains/${{ inputs.clang_variant }}-clang
+          key: clang-${{ inputs.clang_variant }}-${{ steps.cacheweek.outputs.week }}
+
       - name: Setup Clang
         run: |
           bash builder/scripts/setup_clang.sh ${{ inputs.clang_variant }}
@@ -264,6 +274,13 @@ jobs:
           LTO: ${{ inputs.lto }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: bash builder/scripts/lib/ccache_setup.sh
+
+      - name: Cache LTO Linker Cache
+        if: inputs.lto == 'thin'
+        uses: actions/cache@v4
+        with:
+          path: /dev/shm/ldcache
+          key: ldcache-${{ inputs.clang_variant }}-${{ inputs.lto }}
 
       - name: Build Kernel
         env:

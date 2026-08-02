@@ -29,6 +29,11 @@ else
   KERNEL_LDFLAGS=""
 fi
 
+if [ "$LTO_VAL" == "thin" ]; then
+  mkdir -p /dev/shm/ldcache
+  KERNEL_LDFLAGS="$KERNEL_LDFLAGS --thinlto-cache-dir=/dev/shm/ldcache"
+fi
+
 export PATH="${GITHUB_WORKSPACE}/.ccache-shim:${CLANG_PATH}:$PATH"
 CLANG_BIN="${CLANG_PATH}/clang"
 if [ -z "$KBUILD_COMPILER_STRING" ]; then
