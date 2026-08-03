@@ -7,7 +7,7 @@ on:
         description: "Custom Kernel Name (LOCALVERSION)"
         required: true
         type: string
-        default: "-anykern3-11-DumpC2J"
+        default: "-DumpC2J"
       spoof_uname:
         description: "Spoof Uname (SUSFS/Stock Naming)"
         required: true
