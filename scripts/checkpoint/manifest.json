@@ -30,6 +30,8 @@
   },
   "resukisu_root": {
     "good": "2206a7dd71e600f34378c4c583244f46e7a35670",
-    "bad": []
+    "bad": [
+      "f7be4a53bd39d4a03876eba5e888818b1a1fcaac"
+    ]
   }
 }
