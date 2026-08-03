@@ -16,6 +16,11 @@ for img in Image.gz-dtb Image.gz Image; do
   [ -f "$ZIMAGE_DIR/$img" ] && { cp -v "$ZIMAGE_DIR/$img" "$TEMP_DIR/"; break; }
 done
 
+if [ -n "${KASUMI_KO_PATH:-}" ] && [ -f "$KASUMI_KO_PATH" ]; then
+  cp "$KASUMI_KO_PATH" "$TEMP_DIR/kasumi_lkm.ko"
+  echo "[+] Kasumi LKM bundled into package"
+fi
+
 TIME=$(date "+%Y%m%d-%H%M")
 KVER=$(grep '^VERSION = ' "$KERNEL_DIR/Makefile" | awk '{print $3}')
 KPL=$(grep '^PATCHLEVEL = ' "$KERNEL_DIR/Makefile" | awk '{print $3}')
@@ -37,34 +42,6 @@ rm -rf "$TEMP_DIR"
 mkdir -p "$KERNEL_DIR/DumpC2J-Release"
 cp "$ZIP_NAME" "$KERNEL_DIR/DumpC2J-Release/"
 
-if [ -n "${KASUMI_KO_PATH:-}" ] && [ -f "$KASUMI_KO_PATH" ]; then
-  KASUMI_MODULE_DIR="${GITHUB_WORKSPACE}/kasumi_module_temp"
-  rm -rf "$KASUMI_MODULE_DIR"
-  mkdir -p "$KASUMI_MODULE_DIR"
-  cp "$KASUMI_KO_PATH" "$KASUMI_MODULE_DIR/kasumi_lkm.ko"
-
-  cat > "$KASUMI_MODULE_DIR/module.prop" << EOF
-id=kasumi_lkm
-name=Kasumi LKM
-version=${KERNEL_VER}
-versionCode=1
-author=adennnqt
-description=Kasumi path hiding/spoofing kernel module, built alongside DumpC2J ${KERNEL_VER}
-EOF
-
-  cat > "$KASUMI_MODULE_DIR/post-fs-data.sh" << 'MODEOF'
-#!/system/bin/sh
-MODDIR=${0%/*}
-insmod "$MODDIR/kasumi_lkm.ko"
-MODEOF
-  chmod 755 "$KASUMI_MODULE_DIR/post-fs-data.sh"
-
-  KASUMI_MODULE_ZIP="Kasumi-Module-${KERNEL_VER}-${TIME}.zip"
-  (cd "$KASUMI_MODULE_DIR" && zip -r9 "${GITHUB_WORKSPACE}/${KASUMI_MODULE_ZIP}" . > /dev/null)
-  cp "${GITHUB_WORKSPACE}/${KASUMI_MODULE_ZIP}" "$KERNEL_DIR/DumpC2J-Release/"
-  rm -rf "$KASUMI_MODULE_DIR"
-  echo "[+] Kasumi module packaged: ${KASUMI_MODULE_ZIP}"
-fi
 
 echo "ZIP_NAME=$ZIP_NAME" >> "$GITHUB_ENV"
 echo "INPUT_VARIANT=$VARIANT" >> "$GITHUB_ENV"
