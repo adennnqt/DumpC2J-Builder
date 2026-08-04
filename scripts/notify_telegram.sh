@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/functions.sh"
+
 KERNEL_DIR="${GITHUB_WORKSPACE}/kernel-source"
 BUILDER_DIR="${GITHUB_WORKSPACE}/builder"
 ZIP_PATH="${KERNEL_DIR}/DumpC2J-Release/${ZIP_NAME}"
@@ -124,7 +127,7 @@ SEND_DOC=$(curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDo
   -F document=@"${ZIP_PATH}")
 
 if ! echo "$SEND_DOC" | grep -q '"ok":true'; then
-  echo "[✗] Failed to upload file to Telegram. Response:"
+  warn "Failed to upload file to Telegram. Response:"
   echo "$SEND_DOC"
   exit 1
 fi
@@ -162,15 +165,15 @@ SEND_DETAIL=$(curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sen
 
 update_tag() {
   local repo_dir="$1" tag_name="$2"
-  (cd "$repo_dir" && git tag -f "$tag_name" && git push origin "$tag_name" --force 2>/dev/null) || echo "[!] Failed to push tag $tag_name in $repo_dir"
+  (cd "$repo_dir" && git tag -f "$tag_name" && git push origin "$tag_name" --force 2>/dev/null) || warn "Failed to push tag $tag_name in $repo_dir"
 }
 
 if echo "$SEND_DETAIL" | grep -q '"ok":true'; then
-  echo "[✓] Telegram notification (file + detail) sent."
+  log "Telegram notification (file + detail) sent."
   update_tag "$KERNEL_DIR" "dumpc2j-last-notified"
   update_tag "$BUILDER_DIR" "dumpc2j-builder-last-notified"
 else
-  echo "[!] File sent, but detail message failed. Trying plain text fallback..."
+  warn "File sent, but detail message failed. Trying plain text fallback..."
   echo "$SEND_DETAIL"
   curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
     -d chat_id="${TELEGRAM_CHAT_ID}" \
