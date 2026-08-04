@@ -124,36 +124,36 @@ resolve_component() {
     echo "CANDIDATE_${prefix}=${candidate}" >> "$GITHUB_ENV"
 }
 
+scout_track() {
+  local key="$1" prefix="$2"
+  local label url filter latest
+  label=$(source_label "$key")
+  url=$(source_url "$key")
+  filter=$(source_filter "$key")
+  latest=$(latest_sha_or_empty "$label" "$url" "$filter")
+  resolve_component "$key" "$prefix" "$latest" "$url"
+}
+
 case "$ROOT" in
   sukisu)
     if [ "$VARIANT" == "susfs" ]; then
-      url="https://api.github.com/repos/SukiSU-Ultra/SukiSU-Ultra/commits/builtin"
-      latest=$(latest_sha_or_empty "SukiSU-Ultra (builtin)" "$url" '.sha')
-      resolve_component "sukisu_susfs" "SUKISU_SUSFS" "$latest" "$url"
+      scout_track "sukisu_susfs" "SUKISU_SUSFS"
     else
-      url="https://api.github.com/repos/SukiSU-Ultra/SukiSU-Ultra/commits/main"
-      latest=$(latest_sha_or_empty "SukiSU-Ultra (main)" "$url" '.sha')
-      resolve_component "sukisu_root" "SUKISU_ROOT" "$latest" "$url"
+      scout_track "sukisu_root" "SUKISU_ROOT"
     fi
     ;;
   resukisu)
-    url="https://api.github.com/repos/ReSukiSU/ReSukiSU/commits/main"
-    latest=$(latest_sha_or_empty "ReSukiSU (main)" "$url" '.sha')
     if [ "$VARIANT" == "susfs" ]; then
-      resolve_component "resukisu_susfs" "RESUKISU_SUSFS" "$latest" "$url"
+      scout_track "resukisu_susfs" "RESUKISU_SUSFS"
     else
-      resolve_component "resukisu_root" "RESUKISU_ROOT" "$latest" "$url"
+      scout_track "resukisu_root" "RESUKISU_ROOT"
     fi
     ;;
   ksu-next)
     if [ "$VARIANT" == "susfs" ]; then
-      url="https://api.github.com/repos/pershoot/KernelSU-Next/commits/dev-susfs"
-      latest=$(latest_sha_or_empty "pershoot/KernelSU-Next (dev-susfs)" "$url" '.sha')
-      resolve_component "ksunext_susfs" "KSUNEXT_SUSFS" "$latest" "$url"
+      scout_track "ksunext_susfs" "KSUNEXT_SUSFS"
     else
-      url="https://api.github.com/repos/KernelSU-Next/KernelSU-Next/commits/dev"
-      latest=$(latest_sha_or_empty "KernelSU-Next (dev)" "$url" '.sha')
-      resolve_component "ksunext_root" "KSUNEXT_ROOT" "$latest" "$url"
+      scout_track "ksunext_root" "KSUNEXT_ROOT"
     fi
     ;;
   *)
@@ -162,7 +162,5 @@ case "$ROOT" in
 esac
 
 if [ "$VARIANT" == "susfs" ]; then
-  url="https://gitlab.com/api/v4/projects/simonpunk%2Fsusfs4ksu/repository/commits/gki-android15-6.6-dev"
-  latest=$(latest_sha_or_empty "SuSFS (susfs4ksu, GitLab)" "$url" '.id')
-  resolve_component "susfs4ksu" "SUSFS4KSU" "$latest" "$url"
+  scout_track "susfs4ksu" "SUSFS4KSU"
 fi
