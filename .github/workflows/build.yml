@@ -100,8 +100,6 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: write
-    outputs:
-      lto_actual: ${{ steps.lto_output.outputs.lto_actual }}
 
     steps:
       - name: Validate Input Combination
@@ -127,7 +125,6 @@ jobs:
           INPUT_HZ: ${{ inputs.hz }}
           INPUT_VARIANT: ${{ inputs.variant }}
           INPUT_ROOT: ${{ inputs.root }}
-          INPUT_HARDENED: "on"
           INPUT_BYPASS: ${{ inputs.bypasscharging && 'on' || 'off' }}
           INPUT_DROIDSPACES: ${{ inputs.droidspaces && 'on' || 'off' }}
           INPUT_HTSR: "on"
@@ -237,7 +234,6 @@ jobs:
           INPUT_VARIANT: ${{ inputs.variant }}
           INPUT_ROOT: ${{ inputs.root }}
           INPUT_LTO: ${{ inputs.lto }}
-          INPUT_HARDENED: "on"
           INPUT_HTSR: "on"
           INPUT_WIFI: "on"
           INPUT_KGSL: "on"
@@ -265,9 +261,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: bash builder/scripts/merge_ccache.sh "$CCACHE_ASSET" "$CCACHE_OUT_DIR"
 
-      - name: Set LTO Output
-        id: lto_output
-        run: echo "lto_actual=${{ env.LTO_ACTUAL }}" >> "$GITHUB_OUTPUT"
 
       - name: Notify Telegram
         if: success()

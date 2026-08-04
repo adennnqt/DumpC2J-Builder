@@ -129,4 +129,4 @@ echo "CLANG_PATH=${CLANG_BIN}" >> "${GITHUB_ENV}"
 echo "${CLANG_BIN}" >> "${GITHUB_PATH}"
 echo "KBUILD_COMPILER_STRING=${COMPILER_STRING}" >> "${GITHUB_ENV}"
 echo "[+] Clang ready: ${CLANG_BIN}"
-${CLANG_BIN}/clang --version
+"${CLANG_BIN}/clang" --version

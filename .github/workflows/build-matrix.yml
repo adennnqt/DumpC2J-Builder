@@ -145,8 +145,6 @@ jobs:
       fail-fast: false
       matrix:
         include: ${{ fromJson(needs.generate_matrix.outputs.matrix) }}
-    outputs:
-      lto_actual: ${{ steps.lto_output.outputs.lto_actual }}
 
     steps:
       - name: Validate Input Combination
@@ -172,7 +170,6 @@ jobs:
           INPUT_HZ: ${{ inputs.hz }}
           INPUT_VARIANT: ${{ matrix.variant }}
           INPUT_ROOT: ${{ matrix.root }}
-          INPUT_HARDENED: "on"
           INPUT_BYPASS: ${{ inputs.bypasscharging && 'on' || 'off' }}
           INPUT_DROIDSPACES: ${{ inputs.droidspaces && 'on' || 'off' }}
           INPUT_HTSR: "on"
@@ -282,7 +279,6 @@ jobs:
           INPUT_VARIANT: ${{ matrix.variant }}
           INPUT_ROOT: ${{ matrix.root }}
           INPUT_LTO: ${{ inputs.lto }}
-          INPUT_HARDENED: "on"
           INPUT_HTSR: "on"
           INPUT_WIFI: "on"
           INPUT_KGSL: "on"
@@ -312,9 +308,6 @@ jobs:
           path: ${{ env.CCACHE_TAR_PATH }}
           retention-days: 1
 
-      - name: Set LTO Output
-        id: lto_output
-        run: echo "lto_actual=${{ env.LTO_ACTUAL }}" >> "$GITHUB_OUTPUT"
 
       - name: Notify Telegram
         if: success()
