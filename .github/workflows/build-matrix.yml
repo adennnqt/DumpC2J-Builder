@@ -8,11 +8,6 @@ on:
         required: true
         type: string
         default: "-DumpC2J"
-      spoof_uname:
-        description: "Spoof Uname (SUSFS/Stock Naming)"
-        required: true
-        type: boolean
-        default: false
       clang_variant:
         description: "Clang Toolchain (shared across all builds)"
         required: true
@@ -177,7 +172,7 @@ jobs:
           INPUT_HZ: ${{ inputs.hz }}
           INPUT_VARIANT: ${{ matrix.variant }}
           INPUT_ROOT: ${{ matrix.root }}
-          INPUT_HARDENED: "off"
+          INPUT_HARDENED: "on"
           INPUT_BYPASS: ${{ inputs.bypasscharging && 'on' || 'off' }}
           INPUT_DROIDSPACES: ${{ inputs.droidspaces && 'on' || 'off' }}
           INPUT_HTSR: "on"
@@ -186,7 +181,7 @@ jobs:
           INPUT_DATA: "on"
           INPUT_DEBUG: ${{ inputs.debug && 'on' || 'off' }}
           INPUT_KERNEL_NAME: ${{ inputs.kernel_name }}
-          INPUT_SPOOF_UNAME: ${{ inputs.spoof_uname && 'on' || 'off' }}
+          INPUT_SPOOF_UNAME: "on"
           INPUT_NOMOUNT: ${{ inputs.nomount && 'on' || 'off' }}
         run: |
           if [ "$INPUT_HZ" == "powersave" ]; then HZ_ID=100
@@ -287,7 +282,7 @@ jobs:
           INPUT_VARIANT: ${{ matrix.variant }}
           INPUT_ROOT: ${{ matrix.root }}
           INPUT_LTO: ${{ inputs.lto }}
-          INPUT_HARDENED: "off"
+          INPUT_HARDENED: "on"
           INPUT_HTSR: "on"
           INPUT_WIFI: "on"
           INPUT_KGSL: "on"
@@ -296,7 +291,7 @@ jobs:
           INPUT_DROIDSPACES: ${{ inputs.droidspaces && 'on' || 'off' }}
           INPUT_DEBUG: ${{ inputs.debug && 'on' || 'off' }}
           INPUT_KERNEL_NAME: ${{ inputs.kernel_name }}
-          INPUT_SPOOF_UNAME: ${{ inputs.spoof_uname && 'on' || 'off' }}
+          INPUT_SPOOF_UNAME: "on"
           INPUT_VERSION_SPOOF: ${{ inputs.kernel_version_spoof }}
           INPUT_NOMOUNT: ${{ inputs.nomount && 'on' || 'off' }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
