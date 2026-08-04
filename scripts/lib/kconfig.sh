@@ -43,7 +43,7 @@ case "$HZ_ID" in
     -e CONFIG_HZ_1000 --set-val CONFIG_HZ 1000 -d CONFIG_RCU_LAZY ;;
   *)    "$KERNEL_DIR/scripts/config" --file "$OUT_DIR/.config" \
     -d CONFIG_HZ_300 -d CONFIG_HZ_1000 -d CONFIG_HZ_100 -d CONFIG_HZ_500 \
-    -e CONFIG_HZ_250 --set-val CONFIG_HZ 250 ;;
+    -e CONFIG_HZ_250 --set-val CONFIG_HZ 250 -d CONFIG_RCU_LAZY ;;
 esac
 
 
