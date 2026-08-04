@@ -7,9 +7,6 @@ echo "ACTUAL_ROOT=$ROOT" >> "$GITHUB_ENV"
 LTO_VAL="${INPUT_LTO:-full}"
 echo "LTO_ACTUAL=$LTO_VAL" >> "$GITHUB_ENV"
 
-if [ "$ROOT" == "resukisu" ] && [ "$VARIANT" != "susfs" ]; then
-  echo "[*] ReSukiSU root-only (no susfs): status: known crash on manager app open, execveat_init fix (7667f76) did NOT fully resolve it."
-fi
 
 cd "$KERNEL_DIR"
 

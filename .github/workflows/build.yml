@@ -52,7 +52,6 @@ on:
           - none
           - ksu-next
           - sukisu
-          - resukisu
         default: sukisu
       lto:
         description: "LTO Mode"
@@ -117,9 +116,6 @@ jobs:
     steps:
       - name: Validate Input Combination
         run: |
-          if [ "${{ inputs.variant }}" == "root" ] && [ "${{ inputs.root }}" == "resukisu" ]; then
-            echo "::warning::ReSukiSU root-only (no susfs) has a known manager-open crash, still unresolved — see scripts/lib/adjust_inputs.sh for current status."
-          fi
           echo "[+] Input combination valid: variant=${{ inputs.variant }}, root=${{ inputs.root }}"
 
       - name: Checkout Builder

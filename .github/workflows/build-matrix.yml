@@ -161,9 +161,6 @@ jobs:
     steps:
       - name: Validate Input Combination
         run: |
-          if [ "${{ matrix.variant }}" == "root" ] && [ "${{ matrix.root }}" == "resukisu" ]; then
-            echo "::warning::ReSukiSU root-only (no susfs) has a known manager-open crash, still unresolved — see scripts/lib/adjust_inputs.sh for current status."
-          fi
           echo "[+] Build valid: variant=${{ matrix.variant }}, root=${{ matrix.root }}"
 
       - name: Checkout Builder
