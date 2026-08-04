@@ -4,7 +4,7 @@ set -e
 CCACHE_ASSET="$1"
 PARTS_DIR="${2:-ccache-parts}"
 CCACHE_TAG="ccache-store"
-CCACHE_REPO="adennnqt/DumpC2J-Builder"
+CCACHE_REPO="${GITHUB_REPOSITORY}"
 
 if [ -z "$CCACHE_ASSET" ]; then
   echo "[!] Usage: merge_ccache.sh <asset-name> [parts-dir]"
