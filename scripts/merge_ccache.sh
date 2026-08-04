@@ -40,14 +40,29 @@ if [ "$SIZE_MB" -gt 1900 ]; then
   echo "::warning::ccache archive is approaching the 2GB release asset limit (${SIZE_MB} MB)"
 fi
 
-if ! gh release view "$CCACHE_TAG" -R "$CCACHE_REPO" >/dev/null 2>&1; then
+if ! timeout 60 gh release view "$CCACHE_TAG" -R "$CCACHE_REPO" >/dev/null 2>&1; then
   echo "[+] Release tag ${CCACHE_TAG} doesn't exist yet, creating..."
-  gh release create "$CCACHE_TAG" -R "$CCACHE_REPO" \
+  timeout 60 gh release create "$CCACHE_TAG" -R "$CCACHE_REPO" \
     --title "ccache storage (do not delete)" \
     --notes "Persistent ccache storage per clang-variant+LTO mode. Auto-managed by CI." \
     --latest=false
 fi
 
-gh release upload "$CCACHE_TAG" "$TAR_PATH" -R "$CCACHE_REPO" --clobber
+UPLOAD_OK=0
+for attempt in 1 2 3; do
+  if timeout 600 gh release upload "$CCACHE_TAG" "$TAR_PATH" -R "$CCACHE_REPO" --clobber; then
+    UPLOAD_OK=1
+    break
+  fi
+  echo "[!] Upload attempt ${attempt} failed/timed out, retrying in 15s..."
+  sleep 15
+done
+
+if [ "$UPLOAD_OK" == "0" ]; then
+  echo "[!] Failed to upload ccache after 3 attempts, giving up (kernel build itself already succeeded)."
+  rm -f "$TAR_PATH"
+  exit 0
+fi
+
 echo "[+] Merged ccache uploaded as ${CCACHE_ASSET} — the only writer, no race."
 rm -f "$TAR_PATH"

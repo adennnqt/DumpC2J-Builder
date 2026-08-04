@@ -10,7 +10,7 @@ KASUMI_REPO="https://github.com/Anatdx/Kasumi.git"
 
 if [ ! -d "$KASUMI_SRC_DIR/.git" ]; then
   rm -rf "$KASUMI_SRC_DIR"
-  git clone --depth=1 "$KASUMI_REPO" "$KASUMI_SRC_DIR"
+  timeout 60 git clone --depth=1 "$KASUMI_REPO" "$KASUMI_SRC_DIR" || { echo "[-] Kasumi clone failed/timed out"; return 1; }
 fi
 
 if [ ! -d "$KASUMI_SRC_DIR/src" ]; then

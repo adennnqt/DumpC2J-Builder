@@ -31,7 +31,7 @@ apply_and_push() {
     local attempt=1 max_attempts=5
 
     while [ "$attempt" -le "$max_attempts" ]; do
-        if ! git fetch -q "$REMOTE" main; then
+        if ! timeout 60 git fetch -q "$REMOTE" main; then
             warn "engine: git fetch failed (attempt ${attempt}/${max_attempts}) — retrying, NOT resetting onto stale data"
             attempt=$(( attempt + 1 ))
             sleep $(( RANDOM % 5 + 2 ))

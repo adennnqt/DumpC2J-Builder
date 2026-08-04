@@ -21,7 +21,7 @@ CCACHE_REPO="adennnqt/DumpC2J-Builder"
 
 echo "[+] ccache asset target: ${CCACHE_ASSET}"
 
-if gh release download "$CCACHE_TAG" \
+if timeout 120 gh release download "$CCACHE_TAG" \
     -p "$CCACHE_ASSET" \
     -D /tmp \
     -R "$CCACHE_REPO" \

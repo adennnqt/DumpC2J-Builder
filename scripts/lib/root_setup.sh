@@ -45,10 +45,10 @@ else
 
   if [ ! -d "$MODULES_DIR/$REPO_NAME" ]; then
     echo "[+] Cloning $REPO_NAME (full history, buat fallback)..."
-    git clone -b "$BRANCH" "$ROOT_REPO" "$MODULES_DIR/$REPO_NAME"
+    timeout 90 git clone -b "$BRANCH" "$ROOT_REPO" "$MODULES_DIR/$REPO_NAME" || { echo "[-] Root method clone failed/timed out"; return 1; }
   else
     echo "[+] Fetching $REPO_NAME..."
-    (cd "$MODULES_DIR/$REPO_NAME" && git fetch origin "$BRANCH")
+    (cd "$MODULES_DIR/$REPO_NAME" && timeout 60 git fetch origin "$BRANCH") || { echo "[-] Root method fetch failed/timed out"; return 1; }
   fi
 
   echo "[+] Checkout ${PIN_KEY} @ ${RESOLVED_SHA:0:8} (dari scout.sh)"
@@ -75,9 +75,9 @@ else
     [ -z "$SUSFS_TARGET_SHA" ] && { echo "[-] ERROR: ${SUSFS_REF_VAR} kosong — scout.sh belum jalan atau gagal resolve."; return 1; }
 
     if [ ! -d "$SUSFS_DIR" ]; then
-      git clone "$SUSFS_REPO_URL" -b "$SUSFS_BRANCH" "$SUSFS_DIR"
+      timeout 90 git clone "$SUSFS_REPO_URL" -b "$SUSFS_BRANCH" "$SUSFS_DIR" || { echo "[-] SUSFS clone failed/timed out"; return 1; }
     else
-      (cd "$SUSFS_DIR" && git remote set-url origin "$SUSFS_REPO_URL" && git fetch origin "$SUSFS_BRANCH")
+      (cd "$SUSFS_DIR" && git remote set-url origin "$SUSFS_REPO_URL" && timeout 60 git fetch origin "$SUSFS_BRANCH") || { echo "[-] SUSFS fetch failed/timed out"; return 1; }
     fi
 
     echo "[+] Checkout susfs4ksu @ ${SUSFS_TARGET_SHA:0:8} (dari scout.sh)"

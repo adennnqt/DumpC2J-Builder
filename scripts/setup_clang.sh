@@ -29,7 +29,7 @@ case "${CLANG_VARIANT}" in
   neutron)
     mkdir -p "${HOME}/toolchains/neutron-clang"
     cd "${HOME}/toolchains/neutron-clang"
-    curl -Lo antman https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman
+    curl --max-time 60 --retry 3 -Lo antman https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman
     chmod +x antman
     for i in 1 2 3; do
       ./antman -S && break
@@ -48,7 +48,7 @@ case "${CLANG_VARIANT}" in
     COMPILER_STRING="Neutron Clang ${NEUTRON_VER}"
     ;;
   cirrus)
-    CIRRUS_URL=$(curl -s https://api.github.com/repos/greenforce-project/greenforce_clang/releases/latest \
+    CIRRUS_URL=$(curl -s --max-time 30 https://api.github.com/repos/greenforce-project/greenforce_clang/releases/latest \
       | python3 -c "import json,sys; d=json.load(sys.stdin); print(next((x['browser_download_url'] for x in d.get('assets',[]) if x['name'].endswith('.tar.gz')), ''))")
     if [ -z "${CIRRUS_URL}" ]; then
       echo "[!] Cirrus release not found"
@@ -56,7 +56,7 @@ case "${CLANG_VARIANT}" in
     fi
     echo "[*] Cirrus URL: ${CIRRUS_URL}"
     mkdir -p "${HOME}/toolchains/cirrus-clang"
-    curl -Lo /tmp/cirrus-clang.tar.gz "${CIRRUS_URL}"
+    curl -fL --retry 5 --retry-delay 15 --retry-all-errors -C - --max-time 300 -o /tmp/cirrus-clang.tar.gz "${CIRRUS_URL}" || { echo "[!] Cirrus clang download failed/timed out"; exit 1; }
     tar -xf /tmp/cirrus-clang.tar.gz -C "${HOME}/toolchains/cirrus-clang" --strip-components=1
     rm /tmp/cirrus-clang.tar.gz
     CLANG_BIN="${HOME}/toolchains/cirrus-clang/bin"
@@ -77,10 +77,10 @@ case "${CLANG_VARIANT}" in
     COMPILER_STRING="AOSP Clang ${AOSP_VER} (${CLANG_VER})"
     ;;
   weebx)
-    WEEBX_URL=$(curl -s https://raw.githubusercontent.com/XSans0/WeebX-Clang/main/main/link.txt)
+    WEEBX_URL=$(curl -s --max-time 30 https://raw.githubusercontent.com/XSans0/WeebX-Clang/main/main/link.txt)
     [ -z "${WEEBX_URL}" ] && { echo "[!] WeebX URL not found"; exit 1; }
     mkdir -p "${HOME}/toolchains/weebx-clang"
-    curl -Lo /tmp/weebx-clang.tar.gz "${WEEBX_URL}"
+    curl -fL --retry 5 --retry-delay 15 --retry-all-errors -C - --max-time 300 -o /tmp/weebx-clang.tar.gz "${WEEBX_URL}" || { echo "[!] WeebX clang download failed/timed out"; exit 1; }
     tar -xf /tmp/weebx-clang.tar.gz -C "${HOME}/toolchains/weebx-clang" --strip-components=1
     rm /tmp/weebx-clang.tar.gz
     CLANG_BIN="${HOME}/toolchains/weebx-clang/bin"
@@ -88,7 +88,7 @@ case "${CLANG_VARIANT}" in
     COMPILER_STRING="WeebX Clang ${WX_VER}"
     ;;
   zyc)
-    ZYC_URL=$(curl -sL https://raw.githubusercontent.com/ZyCromerZ/Clang/main/Clang-main-link.txt | tr -d '[:space:]')
+    ZYC_URL=$(curl -sL --max-time 30 https://raw.githubusercontent.com/ZyCromerZ/Clang/main/Clang-main-link.txt | tr -d '[:space:]')
     echo "[*] ZyC URL: ${ZYC_URL}"
     mkdir -p "${HOME}/toolchains/zyc-clang"
     if [ -z "$ZYC_URL" ]; then
@@ -96,7 +96,7 @@ case "${CLANG_VARIANT}" in
       echo "[-] Please choose a different toolchain (neutron/cirrus/weebx)."
       exit 1
     fi
-    curl -L --fail --retry 3 -o /tmp/zyc-clang.tar.gz "${ZYC_URL}" || {
+    curl -L --fail --retry 5 --retry-delay 15 --retry-all-errors -C - --max-time 300 -o /tmp/zyc-clang.tar.gz "${ZYC_URL}" || {
       echo "[-] ZyC: download failed. Server may be down."
       echo "[-] Please choose a different toolchain (neutron/cirrus/weebx)."
       exit 1
