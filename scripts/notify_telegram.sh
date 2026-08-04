@@ -91,7 +91,6 @@ FEAT="✅ HTSR 240Hz Touch\n✅ WiFi Performance Exploits\n✅ KGSL GPU Bypass\n
 [ "${INPUT_BYPASS:-off}" == "on" ]      && FEAT="${FEAT}✅ Bypass Charging\n"
 [ "${INPUT_NOMOUNT:-off}" == "on" ]     && FEAT="${FEAT}✅ NoMount (VFS)\n"
 [ "${INPUT_DROIDSPACES:-off}" == "on" ] && FEAT="${FEAT}✅ Droidspaces\n"
-[ "${INPUT_KASUMI:-off}" == "on" ]      && FEAT="${FEAT}✅ Kasumi (path hiding/spoofing LKM)\n"
 [ "${INPUT_DEBUG:-off}" == "on" ]       && FEAT="${FEAT}🐛 Debug Mode\n"
 
 FILE_SIZE=$(du -h "$ZIP_PATH" | cut -f1)

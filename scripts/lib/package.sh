@@ -16,10 +16,6 @@ for img in Image.gz-dtb Image.gz Image; do
   [ -f "$ZIMAGE_DIR/$img" ] && { cp -v "$ZIMAGE_DIR/$img" "$TEMP_DIR/"; break; }
 done
 
-if [ -n "${KASUMI_KO_PATH:-}" ] && [ -f "$KASUMI_KO_PATH" ]; then
-  cp "$KASUMI_KO_PATH" "$TEMP_DIR/kasumi_lkm.ko"
-  echo "[+] Kasumi LKM bundled into package"
-fi
 
 TIME=$(date "+%Y%m%d-%H%M")
 KVER=$(grep '^VERSION = ' "$KERNEL_DIR/Makefile" | awk '{print $3}')
@@ -49,7 +45,6 @@ echo "INPUT_ROOT=$ROOT" >> "$GITHUB_ENV"
 echo "INPUT_BYPASS=$BYPASSCHARGING" >> "$GITHUB_ENV"
 echo "INPUT_NOMOUNT=$NOMOUNT" >> "$GITHUB_ENV"
 echo "INPUT_DROIDSPACES=$DROIDSPACES" >> "$GITHUB_ENV"
-echo "INPUT_KASUMI=$KASUMI" >> "$GITHUB_ENV"
 echo "INPUT_DEBUG=$DEBUG_MODE" >> "$GITHUB_ENV"
 
 BUILD_END=$(date +"%s")

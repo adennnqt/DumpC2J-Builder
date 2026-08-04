@@ -89,11 +89,6 @@ on:
         required: true
         type: boolean
         default: false
-      kasumi:
-        description: "Kasumi (path hiding/spoofing LKM, manual insmod required)"
-        required: true
-        type: boolean
-        default: false
       run_mode:
         description: "Run Mode (Release=pinned only, Test=check upstream)"
         required: true
@@ -304,7 +299,6 @@ jobs:
           INPUT_SPOOF_UNAME: ${{ inputs.spoof_uname && 'on' || 'off' }}
           INPUT_VERSION_SPOOF: ${{ inputs.kernel_version_spoof }}
           INPUT_NOMOUNT: ${{ inputs.nomount && 'on' || 'off' }}
-          INPUT_KASUMI: ${{ inputs.kasumi && 'on' || 'off' }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           bash builder/scripts/build.sh
