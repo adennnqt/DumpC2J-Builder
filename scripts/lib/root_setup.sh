@@ -41,7 +41,7 @@ else
 
   REF_VAR="${PIN_PREFIX}_REF"
   RESOLVED_SHA="${!REF_VAR}"
-  [ -z "$RESOLVED_SHA" ] && { echo "[-] ERROR: ${REF_VAR} kosong — scout.sh belum jalan atau gagal resolve."; return 1; }
+  [ -z "$RESOLVED_SHA" ] && { warn "${REF_VAR} kosong — scout.sh belum jalan atau gagal resolve."; return 1; }
 
   if [ ! -d "$MODULES_DIR/$REPO_NAME" ]; then
     echo "[+] Cloning $REPO_NAME (full history, buat fallback)..."
@@ -72,7 +72,7 @@ else
     SUSFS_DIR="$MODULES_DIR/susfs4ksu"
     SUSFS_BRANCH="gki-android15-6.6-dev"
     SUSFS_TARGET_SHA="${!SUSFS_REF_VAR:-}"
-    [ -z "$SUSFS_TARGET_SHA" ] && { echo "[-] ERROR: ${SUSFS_REF_VAR} kosong — scout.sh belum jalan atau gagal resolve."; return 1; }
+    [ -z "$SUSFS_TARGET_SHA" ] && { warn "${SUSFS_REF_VAR} kosong — scout.sh belum jalan atau gagal resolve."; return 1; }
 
     if [ ! -d "$SUSFS_DIR" ]; then
       timeout 90 git clone "$SUSFS_REPO_URL" -b "$SUSFS_BRANCH" "$SUSFS_DIR" || { echo "[-] SUSFS clone failed/timed out"; return 1; }
@@ -106,7 +106,7 @@ else
       if ! (cd "$MODULES_DIR/$REPO_NAME" && \
         patch -p1 --forward -f --reject-file=- \
         < "$SUSFS_DIR/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch"); then
-        echo "[-] ERROR: SUSFS patch failed to apply to $REPO_NAME (hunk mismatch or missing target) — aborting build instead of continuing without the patch."
+        warn "SUSFS patch failed to apply to $REPO_NAME (hunk mismatch or missing target) — aborting build instead of continuing without the patch."
         return 1
       fi
     fi

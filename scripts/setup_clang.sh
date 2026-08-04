@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -eo pipefail
 
 CLANG_VARIANT="${1:-neutron}"
 TOOLCHAIN_DIR="${HOME}/toolchains/${CLANG_VARIANT}-clang"

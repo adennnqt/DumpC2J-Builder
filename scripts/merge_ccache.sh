@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -eo pipefail
 
 CCACHE_ASSET="$1"
 PARTS_DIR="${2:-ccache-parts}"
