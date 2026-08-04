@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-if [ "$ROOT" == "resukisu" ]; then
+if [ "$ROOT" == "resukisu" ] && [ "$VARIANT" == "susfs" ]; then
   KSUD_INT="$MODULES_DIR/$REPO_NAME/kernel/runtime/ksud_integration.c"
   if [ -f "$KSUD_INT" ]; then
     sed -i 's/ksu_init_rc_hook_key_false/ksu_is_init_rc_hook_enabled/g' "$KSUD_INT"
