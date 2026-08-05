@@ -68,7 +68,7 @@ on:
         type: boolean
         default: false
       kernel_version_spoof:
-        description: "Spoof Kernel Version (kosongkan = pakai upstream)"
+        description: "Spoof Kernel Version"
         required: false
         type: string
         default: ""
