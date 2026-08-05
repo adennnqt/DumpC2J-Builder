@@ -37,7 +37,7 @@ fi
 export PATH="${GITHUB_WORKSPACE}/.ccache-shim:${CLANG_PATH}:$PATH"
 CLANG_BIN="${CLANG_PATH}/clang"
 if [ -z "$KBUILD_COMPILER_STRING" ]; then
-  echo "[-] KBUILD_COMPILER_STRING is empty — clang setup may have failed!"
+  warn "KBUILD_COMPILER_STRING is empty — clang setup may have failed!"
   return 1
 fi
 echo "[+] Using Clang: $KBUILD_COMPILER_STRING"

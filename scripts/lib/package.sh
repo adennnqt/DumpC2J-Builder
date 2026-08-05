@@ -5,7 +5,7 @@ IMAGE_FOUND=0
 for img in Image.gz-dtb Image.gz Image; do
   [ -f "$ZIMAGE_DIR/$img" ] && { IMAGE_FOUND=1; break; }
 done
-[ "$IMAGE_FOUND" == "0" ] && { echo "[-] No kernel image found!"; return 1; }
+[ "$IMAGE_FOUND" == "0" ] && { warn "No kernel image found!"; return 1; }
 
 : "${BUILD_START:?BUILD_START not set — check sourcing order}"
 TEMP_DIR="${GITHUB_WORKSPACE}/anykernel_temp"

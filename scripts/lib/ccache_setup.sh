@@ -51,6 +51,6 @@ echo "[+] ccache shim active: $(command -v clang) -> $(readlink -f "$(command -v
 echo "CCACHE_ASSET=${CCACHE_ASSET}" >> "$GITHUB_ENV"
 echo "CCACHE_TAG=${CCACHE_TAG}" >> "$GITHUB_ENV"
 echo "CCACHE_REPO=${CCACHE_REPO}" >> "$GITHUB_ENV"
-echo "PATH=${CCACHE_SHIM_DIR}:${PATH}" >> "$GITHUB_ENV"
+echo "PATH=${PATH}" >> "$GITHUB_ENV"
 
 echo "[+] ccache ready — dir: ${CCACHE_DIR}, compiler_check: content (static key, no run_id)"
