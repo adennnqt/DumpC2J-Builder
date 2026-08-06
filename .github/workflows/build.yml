@@ -112,6 +112,17 @@ jobs:
           path: builder
           fetch-depth: 0
 
+      - name: Free Disk Space
+        run: |
+          echo "[+] Before cleanup:"
+          df -h /
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+            /opt/hostedtoolcache/CodeQL /usr/local/.ghcup \
+            /usr/local/share/boost "$AGENT_TOOLSDIRECTORY" || true
+          sudo docker image prune --all --force || true
+          echo "[+] After cleanup:"
+          df -h /
+
       - name: Clone Kernel Source
         run: |
           git clone --depth=50 --filter=blob:none \
