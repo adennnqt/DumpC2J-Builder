@@ -189,11 +189,9 @@ jobs:
       - name: Setup Build Environment
         run: |
           sudo apt-get update
-          sudo apt-get install -y bc bison build-essential ccache curl flex \
-            g++-multilib gcc-multilib git gnupg gperf imagemagick \
-            lib32ncurses-dev lib32readline-dev lib32z1-dev libncurses-dev \
-            libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush \
-            rsync schedtool squashfs-tools xsltproc zip zlib1g-dev \
+          sudo apt-get install -y --no-install-recommends \
+            bc bison build-essential ccache curl flex git gnupg gperf \
+            libssl-dev libxml2 lzop squashfs-tools rsync zip zlib1g-dev \
             python3 clang lld llvm jq
 
       - name: Get Cache Week
