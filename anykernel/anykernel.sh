@@ -43,9 +43,11 @@ ui_print " "
 
 if [ -L "/dev/block/bootdevice/by-name/init_boot_a" -o -L "/dev/block/by-name/init_boot_a" ]; then
     split_boot
+    patch_cmdline "modprobe.blacklist=hangdetect" "modprobe.blacklist=hangdetect"
     flash_boot
 else
     dump_boot
+    patch_cmdline "modprobe.blacklist=hangdetect" "modprobe.blacklist=hangdetect"
     write_boot
 fi
 
