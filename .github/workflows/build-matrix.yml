@@ -328,11 +328,12 @@ jobs:
         run: bash builder/scripts/notify_telegram.sh
 
       - name: Upload Artifact
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: DumpC2J-${{ env.BUILD_NAME }}
           path: kernel-source/DumpC2J-Release
-          retention-days: 7
+          retention-days: 1
 
   merge_ccache:
     name: "Merge & Publish ccache"
