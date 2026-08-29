@@ -21,7 +21,9 @@
   },
   "ksunext_susfs": {
     "good": "66f6814f104d9f2f138400ba9147f01f2992a507",
-    "bad": []
+    "bad": [
+      "c3cfb2da1e0fdf4999a08b67c6daa0746f8b1568"
+    ]
   },
   "susfs4ksu": {
     "good": "9c84408f1623d6e5d5dbaddd984a2227b091d898",
