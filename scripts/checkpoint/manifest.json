@@ -5,7 +5,9 @@
   },
   "sukisu_susfs": {
     "good": "5a2bb7e5813002ccaabe02fa864cfb2dde6b5109",
-    "bad": []
+    "bad": [
+      "6c5603f0c853a94256940273efc433cbbc85f57a"
+    ]
   },
   "resukisu_susfs": {
     "good": "cdce8bb8c8bf2167d21751e39ca6cdc4ad154678",
