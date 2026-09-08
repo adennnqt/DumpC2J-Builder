@@ -75,9 +75,22 @@ else
     [ -z "$SUSFS_TARGET_SHA" ] && { warn "${SUSFS_REF_VAR} kosong — scout.sh belum jalan atau gagal resolve."; return 1; }
 
     if [ ! -d "$SUSFS_DIR" ]; then
-      timeout 90 git clone "$SUSFS_REPO_URL" -b "$SUSFS_BRANCH" "$SUSFS_DIR" || { echo "[-] SUSFS clone failed/timed out"; return 1; }
+      local clone_ok=0
+      for attempt in 1 2 3; do
+        timeout 120 git clone "$SUSFS_REPO_URL" -b "$SUSFS_BRANCH" "$SUSFS_DIR" && { clone_ok=1; break; }
+        echo "[!] SUSFS clone failed (attempt ${attempt}/3), retrying in 30s..."
+        rm -rf "$SUSFS_DIR" 2>/dev/null
+        sleep 30
+      done
+      [ "$clone_ok" -eq 0 ] && { echo "[-] SUSFS clone failed after 3 attempts"; return 1; }
     else
-      (cd "$SUSFS_DIR" && git remote set-url origin "$SUSFS_REPO_URL" && timeout 60 git fetch origin "$SUSFS_BRANCH") || { echo "[-] SUSFS fetch failed/timed out"; return 1; }
+      local fetch_ok=0
+      for attempt in 1 2 3; do
+        (cd "$SUSFS_DIR" && git remote set-url origin "$SUSFS_REPO_URL" && timeout 90 git fetch origin "$SUSFS_BRANCH") && { fetch_ok=1; break; }
+        echo "[!] SUSFS fetch failed (attempt ${attempt}/3), retrying in 30s..."
+        sleep 30
+      done
+      [ "$fetch_ok" -eq 0 ] && { echo "[-] SUSFS fetch failed after 3 attempts"; return 1; }
     fi
 
     echo "[+] Checkout susfs4ksu @ ${SUSFS_TARGET_SHA:0:8} (dari scout.sh)"
