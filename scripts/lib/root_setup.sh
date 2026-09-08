@@ -70,7 +70,7 @@ else
     fi
 
     SUSFS_DIR="$MODULES_DIR/susfs4ksu"
-    SUSFS_BRANCH="gki-android15-6.6-dev"
+    SUSFS_BRANCH="gki-android15-6.6"
     SUSFS_TARGET_SHA="${!SUSFS_REF_VAR:-}"
     [ -z "$SUSFS_TARGET_SHA" ] && { warn "${SUSFS_REF_VAR} kosong — scout.sh belum jalan atau gagal resolve."; return 1; }
 
