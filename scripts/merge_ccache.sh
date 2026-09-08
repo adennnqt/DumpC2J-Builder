@@ -42,10 +42,12 @@ fi
 
 if ! timeout 60 gh release view "$CCACHE_TAG" -R "$CCACHE_REPO" >/dev/null 2>&1; then
   echo "[+] Release tag ${CCACHE_TAG} doesn't exist yet, creating..."
-  timeout 60 gh release create "$CCACHE_TAG" -R "$CCACHE_REPO" \
+  if ! timeout 60 gh release create "$CCACHE_TAG" -R "$CCACHE_REPO" \
     --title "ccache storage (do not delete)" \
     --notes "Persistent ccache storage per clang-variant+LTO mode. Auto-managed by CI." \
-    --latest=false
+    --latest=false; then
+    echo "[!] Gagal buat release ${CCACHE_TAG} (auth/perms?) — lanjut ke upload, tapi besar kemungkinan gagal juga."
+  fi
 fi
 
 UPLOAD_OK=0

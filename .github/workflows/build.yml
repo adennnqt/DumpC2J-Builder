@@ -127,7 +127,7 @@ jobs:
         run: |
           git clone --depth=50 --filter=blob:none \
             --branch main \
-            https://${{ secrets.GH_TOKEN }}@github.com/adennnqt/DumpC2J-6.6.git \
+            https://github.com/adennnqt/DumpC2J-6.6.git \
             kernel-source
 
       - name: Parse Inputs
@@ -227,7 +227,7 @@ jobs:
         env:
           CLANG_VARIANT: ${{ inputs.clang_variant }}
           LTO: ${{ inputs.lto }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: bash builder/scripts/lib/ccache_setup.sh
 
       - name: Cache LTO Linker Cache
@@ -254,7 +254,7 @@ jobs:
           INPUT_SPOOF_UNAME: "on"
           INPUT_VERSION_SPOOF: ${{ inputs.kernel_version_spoof }}
           INPUT_NOMOUNT: ${{ inputs.nomount && 'on' || 'off' }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           bash builder/scripts/build.sh
 
@@ -267,7 +267,7 @@ jobs:
         if: always()
         continue-on-error: true
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: bash builder/scripts/merge_ccache.sh "$CCACHE_ASSET" "$CCACHE_OUT_DIR"
 
 
