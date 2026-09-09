@@ -77,7 +77,7 @@ resolve_component() {
         log "${prefix}: Release mode — pinned ${ref:0:12}"
     elif [ -z "$latest" ]; then
         ref="$good"; candidate="false"
-        log "${prefix}: no candidate — pakai pinned ${good:-none}"
+        log "${prefix}: no candidate — using pinned ${good:-none}"
     elif [ "$latest" = "$good" ]; then
         ref="$good"; candidate="false"
         log "${prefix}: up to date at ${good:0:12}"
@@ -106,7 +106,7 @@ resolve_component() {
                     log "${prefix}: new candidate ${latest:0:12} detected but deferred — another component is being tested this run, pinned ${good:0:12} for now"
                 else
                     ref=""; candidate="false"
-                    warn "${prefix}: candidate baru ${latest:0:12} terdeteksi tapi ditunda, dan belum ada pin sama sekali — skip komponen ini run ini"
+                    warn "${prefix}: new candidate ${latest:0:12} detected but deferred & no pin exists yet — skipping this component this run"
                     echo "SKIP_${prefix}=true" >> "$GITHUB_ENV"
                     echo "${prefix}_REF=${ref}" >> "$GITHUB_ENV"
                     echo "CANDIDATE_${prefix}=${candidate}" >> "$GITHUB_ENV"
@@ -115,7 +115,7 @@ resolve_component() {
             else
                 ref="$latest"; candidate="true"
                 CANDIDATE_CLAIMED="true"
-                log "${prefix}: candidate baru ${latest:0:12} (pinned: ${good:-none})"
+                log "${prefix}: new candidate ${latest:0:12} (pinned: ${good:-none})"
             fi
         fi
     fi

@@ -26,11 +26,11 @@ if timeout 120 gh release download "$CCACHE_TAG" \
     -D /tmp \
     -R "$CCACHE_REPO" \
     --clobber 2>/dev/null; then
-  echo "[+] Cache ditemukan, extracting..."
+  echo "[+] Cache found, extracting..."
   tar --use-compress-program=unzstd -xf "/tmp/${CCACHE_ASSET}" -C "${GITHUB_WORKSPACE}"
   rm -f "/tmp/${CCACHE_ASSET}"
 else
-  echo "[!] Belum ada cache untuk ${CCACHE_ASSET}, mulai fresh"
+  echo "[!] No cache yet for ${CCACHE_ASSET}, starting fresh"
 fi
 
 ccache --set-config=max_size="$CCACHE_MAXSIZE"
