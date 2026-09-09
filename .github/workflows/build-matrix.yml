@@ -351,7 +351,7 @@ jobs:
   publish_announcement:
     name: "Publish Announcement"
     needs: build
-    if: ${{ !cancelled() && inputs.autopost_channel }}
+    if: ${{ success() && inputs.autopost_channel }}
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout Builder
