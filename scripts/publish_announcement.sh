@@ -39,10 +39,9 @@ for label in "${!LINKS[@]}"; do
   esac
 done
 
-# changelog: feat -> Added; upstream Linux version -> Changed; critical fix -> Critical Fixes; rest dropped
-CRIT_RE='boot|brick|secur|use-after-free|uaf|panic|crash|deadlock|data loss|overflow|mmap|cve'
+# changelog: feat -> Added; upstream Linux version -> Changed; rest dropped (keep it simple)
 DROP_PREFIX='chore|ci|docs|style|refactor|test|perf'
-ADDED="" CHANGED="" FIXED=""
+ADDED="" CHANGED=""
 while IFS= read -r subject; do
   [ -z "$subject" ] && continue
   echo "$subject" | grep -qi '\[ci\]' && continue
@@ -55,8 +54,6 @@ while IFS= read -r subject; do
   desc=$(esc "$desc")
   if [ "$type" == "feat" ]; then
     ADDED="${ADDED}• ${desc}\n"
-  elif echo "$subject" | grep -iE "$CRIT_RE" > /dev/null; then
-    FIXED="${FIXED}• ${desc}\n"
   elif echo "$subject" | grep -qE '^Linux +[0-9]+\.[0-9]+\.[0-9]+'; then
     CHANGED="${CHANGED}• ${desc}\n"
   fi
@@ -65,7 +62,6 @@ done < <(cd "$KERNEL_DIR" && git log -15 --no-merges --pretty=format:"%s")
 CHANGELOG=""
 [ -n "$ADDED" ]  && CHANGELOG="${CHANGELOG}✨ Added:\n${ADDED}\n"
 [ -n "$CHANGED" ] && CHANGELOG="${CHANGELOG}🔧 Changed:\n${CHANGED}\n"
-[ -n "$FIXED" ]  && CHANGELOG="${CHANGELOG}🐛 Critical Fixes:\n${FIXED}\n"
 [ -z "$CHANGELOG" ] && CHANGELOG="No notable changes.\n"
 
 POST="<b>DumpC2J | ${KERNEL_VER}</b>
