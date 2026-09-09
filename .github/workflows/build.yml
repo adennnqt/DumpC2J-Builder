@@ -277,11 +277,3 @@ jobs:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: bash builder/scripts/notify_telegram.sh
-
-      - name: Upload Artifact
-        continue-on-error: true
-        uses: actions/upload-artifact@v4
-        with:
-          name: DumpC2J-${{ env.BUILD_NAME }}
-          path: kernel-source/DumpC2J-Release
-          retention-days: 1
