@@ -65,7 +65,7 @@ CHANGELOG=""
 [ -z "$CHANGELOG" ] && CHANGELOG="No notable changes.\n"
 
 POST="<b>DumpC2J | ${KERNEL_VER}</b>
-GKI Kernel | Android ${ANDROID_VERSION} | Linux ${KERNEL_VER}
+GKI Kernel | Android ${ANDROID_VERSION}
 
 $(printf '%b' "$VAR_LINES")
 —
