@@ -13,6 +13,7 @@
   "resukisu_susfs": {
     "good": "f1dd81dc96d7f3f6691e6ac8b50fba9ae8a2f17c",
     "bad": [
+      "23a40c0f1dc047ee73a1dfd70a3f14df70021cac",
       "82c7f72d6486db3edc5deaa321e4acf96febd38e"
     ]
   },
