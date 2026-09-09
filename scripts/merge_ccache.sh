@@ -46,7 +46,7 @@ if ! timeout 60 gh release view "$CCACHE_TAG" -R "$CCACHE_REPO" >/dev/null 2>&1;
     --title "ccache storage (do not delete)" \
     --notes "Persistent ccache storage per clang-variant+LTO mode. Auto-managed by CI." \
     --latest=false; then
-    echo "[!] Gagal buat release ${CCACHE_TAG} (auth/perms?) — lanjut ke upload, tapi besar kemungkinan gagal juga."
+    echo "[!] Failed to create release ${CCACHE_TAG} (auth/perms?) — continuing to upload, but likely to fail as well."
   fi
 fi
 

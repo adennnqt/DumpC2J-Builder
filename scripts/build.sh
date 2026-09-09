@@ -16,7 +16,7 @@ report_failure_once() {
   local susfs_is_candidate="${!susfs_candidate_var:-false}"
   echo "[!] Build failed during stage: ${stage}"
   if [ "$root_is_candidate" == "true" ] && [ "$susfs_is_candidate" == "true" ]; then
-    echo "[!] Ambiguous failure (unguarded error): $PIN_KEY dan susfs4ksu sama-sama candidate baru — skip auto-blacklist. Cek manual."
+    echo "[!] Ambiguous failure (unguarded error): $PIN_KEY and susfs4ksu are both new candidates — skip auto-blacklist. Check manually."
   else
     [ "$root_is_candidate" == "true" ] && bash "${SCRIPT_DIR}/engine.sh" failure "$PIN_KEY" "$PIN_PREFIX" "$stage"
     [ "$susfs_is_candidate" == "true" ] && bash "${SCRIPT_DIR}/engine.sh" failure "$susfs_key" "$susfs_prefix" "$stage"

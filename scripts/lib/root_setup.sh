@@ -34,24 +34,24 @@ else
   mkdir -p "$MODULES_DIR"
   SKIP_VAR="SKIP_${PIN_PREFIX}"
   if [ "${!SKIP_VAR}" = "true" ]; then
-    echo "[!] ${PIN_KEY} di-skip run ini (belum ada pin & slot candidate kepake komponen lain) — tidak build variant ini."
+    echo "[!] ${PIN_KEY} skipped this run (no pin yet & candidate slot taken by another component) — variant not built."
     echo "BUILD_SKIPPED=true" >> "$GITHUB_ENV"
     return 0
   fi
 
   REF_VAR="${PIN_PREFIX}_REF"
   RESOLVED_SHA="${!REF_VAR}"
-  [ -z "$RESOLVED_SHA" ] && { warn "${REF_VAR} kosong — scout.sh belum jalan atau gagal resolve."; return 1; }
+  [ -z "$RESOLVED_SHA" ] && { warn "${REF_VAR} is empty — scout.sh not run or failed to resolve."; return 1; }
 
   if [ ! -d "$MODULES_DIR/$REPO_NAME" ]; then
-    echo "[+] Cloning $REPO_NAME (full history, buat fallback)..."
+    echo "[+] Cloning $REPO_NAME (full history, for fallback)..."
     timeout 90 git clone -b "$BRANCH" "$ROOT_REPO" "$MODULES_DIR/$REPO_NAME" || { echo "[-] Root method clone failed/timed out"; return 1; }
   else
     echo "[+] Fetching $REPO_NAME..."
     (cd "$MODULES_DIR/$REPO_NAME" && timeout 60 git fetch origin "$BRANCH") || { echo "[-] Root method fetch failed/timed out"; return 1; }
   fi
 
-  echo "[+] Checkout ${PIN_KEY} @ ${RESOLVED_SHA:0:8} (dari scout.sh)"
+  echo "[+] Checkout ${PIN_KEY} @ ${RESOLVED_SHA:0:8} (from scout.sh)"
   (cd "$MODULES_DIR/$REPO_NAME" && git checkout -B "$BRANCH" --quiet "$RESOLVED_SHA")
 
   echo "MANAGER_ROOT_NAME=${ROOT}" >> "$GITHUB_ENV"
@@ -64,7 +64,7 @@ else
     SUSFS_REF_VAR="SUSFS4KSU_REF"
 
     if [ "${!SUSFS_SKIP_VAR:-}" = "true" ]; then
-      echo "[!] ${SUSFS_REF_VAR%_REF} di-skip run ini (belum ada pin & slot candidate kepake komponen lain) — tidak build variant ini."
+      echo "[!] ${SUSFS_REF_VAR%_REF} skipped this run (no pin yet & candidate slot taken by another component) — variant not built."
       echo "BUILD_SKIPPED=true" >> "$GITHUB_ENV"
       return 0
     fi
@@ -72,7 +72,7 @@ else
     SUSFS_DIR="$MODULES_DIR/susfs4ksu"
     SUSFS_BRANCH="gki-android15-6.6"
     SUSFS_TARGET_SHA="${!SUSFS_REF_VAR:-}"
-    [ -z "$SUSFS_TARGET_SHA" ] && { warn "${SUSFS_REF_VAR} kosong — scout.sh belum jalan atau gagal resolve."; return 1; }
+    [ -z "$SUSFS_TARGET_SHA" ] && { warn "${SUSFS_REF_VAR} is empty — scout.sh not run or failed to resolve."; return 1; }
 
     if [ ! -d "$SUSFS_DIR" ]; then
       local clone_ok=0
@@ -93,7 +93,7 @@ else
       [ "$fetch_ok" -eq 0 ] && { echo "[-] SUSFS fetch failed after 3 attempts"; return 1; }
     fi
 
-    echo "[+] Checkout susfs4ksu @ ${SUSFS_TARGET_SHA:0:8} (dari scout.sh)"
+    echo "[+] Checkout susfs4ksu @ ${SUSFS_TARGET_SHA:0:8} (from scout.sh)"
     (cd "$SUSFS_DIR" && git checkout --quiet "$SUSFS_TARGET_SHA")
     echo "SUSFS_USED_SHA=${SUSFS_TARGET_SHA}" >> "$GITHUB_ENV"
 

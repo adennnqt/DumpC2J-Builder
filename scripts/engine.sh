@@ -52,11 +52,11 @@ apply_and_push() {
         sleep $(( RANDOM % 5 + 2 ))
     done
 
-    error "engine: gagal push manifest setelah ${max_attempts} percobaan"
+    error "engine: failed to push manifest after ${max_attempts} attempts"
 }
 
 if [ "$BUILD_OUTCOME" = "success" ]; then
-    log "engine: promoting ${KEY} pin ke ${ref:0:12}"
+    log "engine: promoting ${KEY} pin to ${ref:0:12}"
     apply_and_push \
       ".${KEY}.good = \"${ref}\" | .${KEY}.bad -= [\"${ref}\"]" \
       "chore: bump ${KEY} pin to ${ref:0:12} (verified via run ${GITHUB_RUN_ID})"

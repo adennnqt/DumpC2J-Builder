@@ -66,13 +66,13 @@ resolve_component() {
 
     if [ -n "$good" ] && [ "$good" != "null" ] && [ -n "$url_template" ]; then
         if ! ref_exists "$url_template" "$good"; then
-            warn "${prefix}: pinned good ${good:0:12} udah gak ada di remote (force-push/rewrite upstream?) — treat sbg belum-ada-pin"
+            warn "${prefix}: pinned good ${good:0:12} no longer in remote (force-push/rewrite upstream?) — treat as unpinned"
             good=""
         fi
     fi
 
     if [ "${RUN_MODE^^}" = "RELEASE" ]; then
-        [ -n "$good" ] || error "scout: RUN_MODE=Release tapi belum ada pin ${key} yang valid — run Test dulu."
+        [ -n "$good" ] || error "scout: RUN_MODE=Release but no valid pin ${key} yet — run Test first."
         ref="$good"; candidate="false"
         log "${prefix}: Release mode — pinned ${ref:0:12}"
     elif [ -z "$latest" ]; then
@@ -86,10 +86,10 @@ resolve_component() {
         if [ "$is_bad" = "true" ]; then
             if [ -n "$good" ]; then
                 ref="$good"; candidate="false"
-                warn "${prefix}: latest ${latest:0:12} known-bad — fallback ke pinned ${good:0:12}"
+                warn "${prefix}: latest ${latest:0:12} known-bad — falling back to pinned ${good:0:12}"
             elif [ "$CANDIDATE_CLAIMED" = "true" ]; then
                 ref=""; candidate="false"
-                warn "${prefix}: known-bad, belum ada pin, & slot candidate run ini udah kepake komponen lain — skip komponen ini, tidak checkout apapun"
+                warn "${prefix}: known-bad, no pin yet, & this run's candidate slot is taken by another component — skip this component, no checkout"
                 echo "SKIP_${prefix}=true" >> "$GITHUB_ENV"
                 echo "${prefix}_REF=${ref}" >> "$GITHUB_ENV"
                 echo "CANDIDATE_${prefix}=${candidate}" >> "$GITHUB_ENV"
@@ -97,13 +97,13 @@ resolve_component() {
             else
                 ref="$latest"; candidate="true"
                 CANDIDATE_CLAIMED="true"
-                warn "${prefix}: latest ${latest:0:12} known-bad & belum ada pin — retry sbg last-resort candidate"
+                warn "${prefix}: latest ${latest:0:12} known-bad & no pin yet — retry as last-resort candidate"
             fi
         else
             if [ "$CANDIDATE_CLAIMED" = "true" ]; then
                 if [ -n "$good" ]; then
                     ref="$good"; candidate="false"
-                    log "${prefix}: candidate baru ${latest:0:12} terdeteksi tapi ditunda — komponen lain lagi diuji run ini, pinned ${good:0:12} dulu"
+                    log "${prefix}: new candidate ${latest:0:12} detected but deferred — another component is being tested this run, pinned ${good:0:12} for now"
                 else
                     ref=""; candidate="false"
                     warn "${prefix}: candidate baru ${latest:0:12} terdeteksi tapi ditunda, dan belum ada pin sama sekali — skip komponen ini run ini"
