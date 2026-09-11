@@ -101,12 +101,14 @@ case "${CLANG_VARIANT}" in
       echo "[-] Please choose a different toolchain (neutron/cirrus/weebx)."
       exit 1
     }
+    echo "[*] Building ZyC tar index..."
+    tar -tf /tmp/zyc-clang.tar.gz > /tmp/zyc-index.txt 2>/dev/null
     echo "[*] ZyC tar structure (first 10):"
-    tar -tf /tmp/zyc-clang.tar.gz 2>/dev/null | head -10
+    head -10 /tmp/zyc-index.txt
     echo "[*] ZyC bin location:"
-    tar -tf /tmp/zyc-clang.tar.gz 2>/dev/null | grep -m3 'bin/clang'
+    grep -m3 'bin/clang' /tmp/zyc-index.txt
     STRIP=0
-    BIN_PATH=$(tar -tf /tmp/zyc-clang.tar.gz 2>/dev/null | grep -m1 'bin/clang$')
+    BIN_PATH=$(grep -m1 'bin/clang$' /tmp/zyc-index.txt)
     [ -z "$BIN_PATH" ] && { echo "[!] bin/clang not found in ZyC tarball"; exit 1; }
     DEPTH=$(echo "$BIN_PATH" | tr '/' '\n' | wc -l)
     STRIP=$(( DEPTH - 2 ))
