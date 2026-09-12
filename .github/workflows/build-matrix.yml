@@ -342,6 +342,7 @@ jobs:
 
       - name: Upload variant meta
         if: success() && inputs.autopost_channel
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: variant-link-${{ matrix.variant }}-${{ matrix.root }}
