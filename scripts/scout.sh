@@ -7,12 +7,15 @@ source "${BUILDER_DIR}/scripts/functions.sh"
 MANIFEST="${BUILDER_DIR}/scripts/checkpoint/manifest.json"
 [ -f "$MANIFEST" ] || error "scout: manifest.json not found at ${MANIFEST}"
 
+CURL_AUTH=()
+if [ -n "${GH_TOKEN:-}" ]; then CURL_AUTH=(-H "Authorization: token $GH_TOKEN"); fi
+
 latest_sha_or_empty() {
     local label="$1" url="$2" jq_filter="$3"
     local body_file http_code curl_exit sha
 
     body_file="$(mktemp)"
-    if http_code=$(curl -sL -o "$body_file" -w '%{http_code}' --max-time 20 "$url"); then
+    if http_code=$(curl -sL -o "$body_file" -w '%{http_code}' --max-time 20 "${CURL_AUTH[@]}" "$url"); then
         curl_exit=0
     else
         curl_exit=$?
@@ -42,14 +45,35 @@ ref_exists() {
             repo_base="${url_template%/commits/*}"
             branch="${url_template##*/commits/}"
             compare_url="${repo_base}/compare/${branch}...${sha}"
-            status=$(curl -sL --max-time 15 "$compare_url" 2>/dev/null | jq -r '.status // empty')
+            status=$(curl -sL --max-time 15 "${CURL_AUTH[@]}" "$compare_url" 2>/dev/null | jq -r '.status // empty')
             [ "$status" = "identical" ] || [ "$status" = "behind" ]
             ;;
         *)
             local check_url http_code
             check_url="${url_template%/*}/${sha}"
-            http_code=$(curl -sL -o /dev/null -w '%{http_code}' --max-time 15 "$check_url" 2>/dev/null) || return 1
+            http_code=$(curl -sL -o /dev/null -w '%{http_code}' --max-time 15 "${CURL_AUTH[@]}" "$check_url" 2>/dev/null) || return 1
             [ "$http_code" = "200" ]
+            ;;
+    esac
+}
+
+log_commits_since() {
+    local prefix="$1" base="$2" head="$3" url_template="$4"
+    [ -n "$base" ] || return 0
+    case "$url_template" in
+        *api.github.com*/commits/*)
+            repo_base="${url_template%/commits/*}"
+            compare_url="${repo_base}/compare/${base}...${head}"
+            body=$(curl -sL --max-time 20 "${CURL_AUTH[@]}" "$compare_url" 2>/dev/null) || return 0
+            n=$(echo "$body" | jq -r '[.commits[]?.commit.message]|length' 2>/dev/null) || n=0
+            case "$n" in ''|0|null)
+                log "${prefix}: can't list commits ${base:0:12}..${head:0:12} (rate-limited?)"
+                return 0
+                ;;
+            esac
+            log "${prefix}: ${n} upstream commit(s) between ${base:0:12}..${head:0:12}:"
+            echo "$body" | jq -r '.commits[]?.commit.message' 2>/dev/null | head -10 | sed 's/^/\t- /'
+            [ "$n" -le 10 ] || log "${prefix}:   ... and $((n - 10)) more"
             ;;
     esac
 }
@@ -91,6 +115,7 @@ resolve_component() {
             else
                 candidate="true"
                 log "${prefix}: building latest ${latest:0:12} (previous pin: ${good:-none})"
+                log_commits_since "$prefix" "$good" "$latest" "$url_template"
             fi
         fi
     elif [ -n "$good" ]; then

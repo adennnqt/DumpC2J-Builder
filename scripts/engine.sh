@@ -21,10 +21,6 @@ ref_var="${PREFIX}_REF"
 ref="${!ref_var}"
 
 cd "$BUILDER_DIR"
-git config user.name  "DumpC2J Bot"
-git config user.email "bot@dumpc2j"
-
-REMOTE="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
 
 apply_and_push() {
     local jq_patch="$1" commit_msg="$2"
@@ -56,13 +52,14 @@ apply_and_push() {
 }
 
 if [ "$BUILD_OUTCOME" = "success" ]; then
+    git config user.name  "DumpC2J Bot"
+    git config user.email "bot@dumpc2j"
+    REMOTE="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
     log "engine: promoting ${KEY} pin to ${ref:0:12}"
     apply_and_push \
       ".${KEY}.good = \"${ref}\" | .${KEY}.bad -= [\"${ref}\"]" \
       "chore: bump ${KEY} pin to ${ref:0:12} (verified via run ${GITHUB_RUN_ID})"
 else
-    warn "engine: blacklisting ${KEY} candidate ${ref:0:12} (build failed at stage: ${STAGE})"
-    apply_and_push \
-      ".${KEY}.bad |= (. + [\"${ref}\"] | unique)" \
-      "chore: mark ${KEY} candidate ${ref:0:12} as known-bad (failed at ${STAGE}, run ${GITHUB_RUN_ID})"
+    warn "engine: build failed for ${KEY} at ${STAGE} — NOT auto-blacklisting (manual-only design)."
+    warn "engine: if ${ref:0:12} is genuinely broken, blacklist it manually (add to bad[] in manifest) — else fix & re-run."
 fi
