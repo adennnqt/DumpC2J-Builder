@@ -26,7 +26,10 @@ for f in "${LINKS_DIR}"/*/variant_meta.json; do
   LINKS[$label]="$link"
   LABELS[$label]=1
 done
-[ ${#LINKS[@]} -gt 0 ] || error "No variant metadata found in ${LINKS_DIR}"
+if [ ${#LINKS[@]} -eq 0 ]; then
+  warn "No variant metadata found in ${LINKS_DIR} — skipping announcement (files may still have been posted to the channel)"
+  exit 0
+fi
 
 VAR_LINES=""
 for label in "${ORDER[@]}"; do
