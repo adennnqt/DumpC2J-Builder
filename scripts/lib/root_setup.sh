@@ -32,12 +32,6 @@ if [ "$VARIANT" == "stock" ]; then
   touch "$KERNEL_DIR/drivers/kernelsu/Makefile"
 else
   mkdir -p "$MODULES_DIR"
-  SKIP_VAR="SKIP_${PIN_PREFIX}"
-  if [ "${!SKIP_VAR}" = "true" ]; then
-    echo "[!] ${PIN_KEY} skipped this run (no pin yet & candidate slot taken by another component) — variant not built."
-    echo "BUILD_SKIPPED=true" >> "$GITHUB_ENV"
-    return 0
-  fi
 
   REF_VAR="${PIN_PREFIX}_REF"
   RESOLVED_SHA="${!REF_VAR}"
@@ -60,14 +54,7 @@ else
 
   if [ "$VARIANT" == "susfs" ]; then
     SUSFS_REPO_URL="https://gitlab.com/simonpunk/susfs4ksu.git"
-    SUSFS_SKIP_VAR="SKIP_SUSFS4KSU"
     SUSFS_REF_VAR="SUSFS4KSU_REF"
-
-    if [ "${!SUSFS_SKIP_VAR:-}" = "true" ]; then
-      echo "[!] ${SUSFS_REF_VAR%_REF} skipped this run (no pin yet & candidate slot taken by another component) — variant not built."
-      echo "BUILD_SKIPPED=true" >> "$GITHUB_ENV"
-      return 0
-    fi
 
     SUSFS_DIR="$MODULES_DIR/susfs4ksu"
     SUSFS_BRANCH="gki-android15-6.6"
