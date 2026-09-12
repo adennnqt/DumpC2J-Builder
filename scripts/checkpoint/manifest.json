@@ -23,6 +23,7 @@
   },
   "susfs4ksu": {
     "good": "d4ea3dd764b3a9a5e0a93de53025b8952b8fe923",
+    "manual": true,
     "bad": []
   },
   "resukisu_root": {

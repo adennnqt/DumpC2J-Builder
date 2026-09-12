@@ -7,8 +7,6 @@ source "${BUILDER_DIR}/scripts/functions.sh"
 MANIFEST="${BUILDER_DIR}/scripts/checkpoint/manifest.json"
 [ -f "$MANIFEST" ] || error "scout: manifest.json not found at ${MANIFEST}"
 
-RUN_MODE="${RUN_MODE:-Test}"
-
 latest_sha_or_empty() {
     local label="$1" url="$2" jq_filter="$3"
     local body_file http_code curl_exit sha
@@ -71,21 +69,11 @@ resolve_component() {
         fi
     fi
 
-    if [ "${RUN_MODE^^}" = "RELEASE" ]; then
-        [ -n "$good" ] || error "scout: RUN_MODE=Release but no valid pin ${key} yet — run Test first."
-        ref="$good"; candidate="false"
-        log "${prefix}: Release mode — pinned ${ref:0:12}"
-    elif [ "$manual" = "true" ]; then
+    if [ "$manual" = "true" ]; then
         [ -n "$good" ] || error "scout: ${key} is manual-pinned but has no good pin."
         ref="$good"; candidate="false"
         log "${prefix}: manual-pinned ${ref:0:12} (bump deliberately, coordinates with kernel hooks)"
-    elif [ -z "$latest" ]; then
-        ref="$good"; candidate="false"
-        log "${prefix}: no latest resolvable — using pinned ${good:-none}"
-    elif [ "$latest" = "$good" ]; then
-        ref="$good"; candidate="false"
-        log "${prefix}: up to date at ${good:0:12}"
-    else
+    elif [ -n "$latest" ] && [ "$latest" != "null" ]; then
         is_bad=$(echo "$bad_list" | jq --arg sha "$latest" 'any(. == $sha)')
         if [ "$is_bad" = "true" ]; then
             if [ -n "$good" ]; then
@@ -96,9 +84,20 @@ resolve_component() {
                 warn "${prefix}: latest ${latest:0:12} known-bad & no pin yet — last-resort: testing it anyway"
             fi
         else
-            ref="$latest"; candidate="true"
-            log "${prefix}: tracking latest ${latest:0:12} (pinned: ${good:-none})"
+            ref="$latest"
+            if [ "$latest" = "$good" ]; then
+                candidate="false"
+                log "${prefix}: up to date at ${latest:0:12}"
+            else
+                candidate="true"
+                log "${prefix}: building latest ${latest:0:12} (previous pin: ${good:-none})"
+            fi
         fi
+    elif [ -n "$good" ]; then
+        ref="$good"; candidate="false"
+        log "${prefix}: no latest resolvable — using pinned ${good:0:12}"
+    else
+        error "scout: no resolvable ref for ${key} (no latest, no pin)"
     fi
 
     echo "${prefix}_REF=${ref}" >> "$GITHUB_ENV"
