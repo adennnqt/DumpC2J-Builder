@@ -1,0 +1,228 @@
+name: Build Kernel
+description: "Shared kernel build pipeline (single build.yml + build-matrix.yml)"
+
+inputs:
+  variant:
+    description: "Build variant (stock|susfs|root)"
+    required: true
+  root:
+    description: "Root method (none|sukisu|resukisu|ksu-next)"
+    required: true
+  hz:
+    description: "Refresh Rate (HZ)"
+    required: false
+    default: smooth
+  clang_variant:
+    description: "Clang Toolchain"
+    required: false
+    default: neutron
+  lto:
+    description: "LTO Mode"
+    required: false
+    default: full
+  kernel_name:
+    description: "Custom Kernel Name (LOCALVERSION)"
+    required: false
+    default: "-DumpC2J"
+  bypasscharging:
+    description: "Bypass Charging (MCA Override)"
+    required: false
+    default: "true"
+  droidspaces:
+    description: "Droidspaces Support"
+    required: false
+    default: "false"
+  debug:
+    description: "Debug Mode (nokaslr, no optimizations)"
+    required: false
+    default: "false"
+  nomount:
+    description: "NoMount (VFS Path Injection, no mount table)"
+    required: false
+    default: "false"
+  kernel_version_spoof:
+    description: "Spoof Kernel Version (leave blank to use upstream)"
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Validate Input Combination
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      run: "echo '[+] Build valid: variant=${{ inputs.variant }}, root=${{ inputs.root }}'"
+
+    - name: Free Disk Space
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      run: |
+        echo "[+] Before cleanup:"
+        df -h /
+        sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+          /opt/hostedtoolcache/CodeQL /usr/local/.ghcup \
+          /usr/local/share/boost "$AGENT_TOOLSDIRECTORY" || true
+        sudo docker image prune --all --force || true
+        echo "[+] After cleanup:"
+        df -h /
+
+    - name: Clone Kernel Source
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      run: |
+        git clone --depth=50 --filter=blob:none \
+          --branch main \
+          https://github.com/adennnqt/DumpC2J-6.6.git \
+          kernel-source
+
+    - name: Parse Inputs
+      id: setup_vars
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      env:
+        IN_HZ: ${{ inputs.hz }}
+        IN_VARIANT: ${{ inputs.variant }}
+        IN_ROOT: ${{ inputs.root }}
+        IN_BYPASS: ${{ inputs.bypasscharging }}
+        IN_DROIDSPACES: ${{ inputs.droidspaces }}
+        IN_DEBUG: ${{ inputs.debug }}
+        IN_NOMOUNT: ${{ inputs.nomount }}
+        IN_KERNEL_NAME: ${{ inputs.kernel_name }}
+      run: |
+        onoff() { [ "$1" = "true" ] && echo on || echo off; }
+        INPUT_HTSR="on"
+        INPUT_WIFI="on"
+        INPUT_KGSL="on"
+        INPUT_DATA="on"
+        INPUT_SPOOF_UNAME="on"
+        INPUT_BYPASS="$(onoff "$IN_BYPASS")"
+        INPUT_DROIDSPACES="$(onoff "$IN_DROIDSPACES")"
+        INPUT_DEBUG="$(onoff "$IN_DEBUG")"
+        INPUT_NOMOUNT="$(onoff "$IN_NOMOUNT")"
+
+        if [ "$IN_HZ" == "powersave" ]; then HZ_ID=100
+        elif [ "$IN_HZ" == "balance" ]; then HZ_ID=250
+        elif [ "$IN_HZ" == "performance" ]; then HZ_ID=500
+        elif [ "$IN_HZ" == "smooth" ]; then HZ_ID=300
+        elif [ "$IN_HZ" == "ultra-performance" ]; then HZ_ID=1000
+        fi
+        echo "HZ_ID=$HZ_ID" >> $GITHUB_ENV
+
+        ACTUAL_ROOT="$IN_ROOT"
+        if [ "$IN_VARIANT" == "stock" ]; then
+          ACTUAL_ROOT="none"
+        fi
+        echo "ACTUAL_ROOT=$ACTUAL_ROOT" >> $GITHUB_ENV
+
+        if [ "$IN_VARIANT" == "stock" ]; then
+          BUILD_NAME="${IN_VARIANT}-${IN_HZ}"
+        else
+          BUILD_NAME="${IN_VARIANT}-${ACTUAL_ROOT}-${IN_HZ}"
+        fi
+        [ "$INPUT_BYPASS" == "on" ] && BUILD_NAME="${BUILD_NAME}-bypasscharging"
+        [ "$INPUT_DROIDSPACES" == "on" ] && BUILD_NAME="${BUILD_NAME}-droidspaces"
+        [ "$INPUT_DEBUG" == "on" ] && BUILD_NAME="${BUILD_NAME}-debug"
+        [ "$INPUT_NOMOUNT" == "on" ] && BUILD_NAME="${BUILD_NAME}-nomount"
+        echo "BUILD_NAME=$BUILD_NAME" >> $GITHUB_ENV
+
+        echo "INPUT_HTSR=$INPUT_HTSR" >> $GITHUB_ENV
+        echo "INPUT_WIFI=$INPUT_WIFI" >> $GITHUB_ENV
+        echo "INPUT_KGSL=$INPUT_KGSL" >> $GITHUB_ENV
+        echo "INPUT_DATA=$INPUT_DATA" >> $GITHUB_ENV
+        echo "INPUT_SPOOF_UNAME=$INPUT_SPOOF_UNAME" >> $GITHUB_ENV
+        echo "INPUT_BYPASS=$INPUT_BYPASS" >> $GITHUB_ENV
+        echo "INPUT_DROIDSPACES=$INPUT_DROIDSPACES" >> $GITHUB_ENV
+        echo "INPUT_DEBUG=$INPUT_DEBUG" >> $GITHUB_ENV
+        echo "INPUT_NOMOUNT=$INPUT_NOMOUNT" >> $GITHUB_ENV
+        echo "INPUT_KERNEL_NAME=$IN_KERNEL_NAME" >> $GITHUB_ENV
+        echo "INPUT_VARIANT=$IN_VARIANT" >> $GITHUB_ENV
+        echo "INPUT_ROOT=$IN_ROOT" >> $GITHUB_ENV
+        echo "INPUT_HZ=$IN_HZ" >> $GITHUB_ENV
+
+    - name: Create Swap
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      run: |
+        SWAPFILE="/mnt/build_swapfile"
+        while true; do
+          if sudo fallocate -l 10G $SWAPFILE || sudo dd if=/dev/zero of=$SWAPFILE bs=1M count=10240 status=progress; then
+            break
+          else
+            sleep 5
+          fi
+        done
+        sudo chmod 600 $SWAPFILE && sudo mkswap $SWAPFILE && sudo swapon $SWAPFILE
+
+    - name: Setup Build Environment
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends \
+          bc bison build-essential ccache curl flex git gnupg gperf \
+          libssl-dev libxml2 lzop squashfs-tools rsync zip zlib1g-dev \
+          python3 clang lld llvm jq
+
+    - name: Get Cache Week
+      id: cacheweek
+      if: inputs.clang_variant != 'neutron'
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      run: echo "week=$(date -u +%G-W%V)" >> "$GITHUB_OUTPUT"
+
+    - name: Cache Clang Toolchain
+      if: inputs.clang_variant != 'neutron'
+      uses: actions/cache@v4
+      with:
+        path: ~/toolchains/${{ inputs.clang_variant }}-clang
+        key: clang-${{ inputs.clang_variant }}-${{ steps.cacheweek.outputs.week }}
+
+    - name: Setup Clang
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      run: |
+        bash builder/scripts/setup_clang.sh ${{ inputs.clang_variant }}
+
+    - name: Setup AnyKernel3
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      run: |
+        git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git anykernel
+        cp kernel-source/anykernel/anykernel.sh anykernel/anykernel.sh
+        cp -r kernel-source/anykernel/tools/* anykernel/tools/
+
+    - name: Scout Checkpoint
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      env:
+        ROOT: ${{ env.ACTUAL_ROOT }}
+        VARIANT: ${{ inputs.variant }}
+      run: bash builder/scripts/scout.sh
+
+    - name: Setup ccache
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      env:
+        CLANG_VARIANT: ${{ inputs.clang_variant }}
+        LTO: ${{ inputs.lto }}
+      run: bash builder/scripts/ccache_setup.sh
+
+    - name: Cache LTO Linker Cache
+      if: inputs.lto == 'thin'
+      uses: actions/cache@v4
+      with:
+        path: /dev/shm/ldcache
+        key: ldcache-${{ inputs.clang_variant }}-${{ inputs.lto }}
+
+    - name: Build Kernel
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      env:
+        INPUT_HZ: ${{ inputs.hz }}
+        INPUT_VARIANT: ${{ inputs.variant }}
+        INPUT_ROOT: ${{ inputs.root }}
+        INPUT_LTO: ${{ inputs.lto }}
+        INPUT_VERSION_SPOOF: ${{ inputs.kernel_version_spoof }}
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        bash builder/scripts/build.sh

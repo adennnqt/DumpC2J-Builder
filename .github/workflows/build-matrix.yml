@@ -84,14 +84,6 @@ on:
         required: true
         type: boolean
         default: false
-      run_mode:
-        description: "Run Mode (Release=pinned only, Test=check upstream)"
-        required: true
-        type: choice
-        options:
-          - Release
-          - Test
-        default: Release
       autopost_channel:
         description: "Autopost files + announcement to main channel"
         required: true
@@ -152,166 +144,31 @@ jobs:
         include: ${{ fromJson(needs.generate_matrix.outputs.matrix) }}
 
     steps:
-      - name: Validate Input Combination
-        run: |
-          echo "[+] Build valid: variant=${{ matrix.variant }}, root=${{ matrix.root }}"
-
       - name: Checkout Builder
         uses: actions/checkout@v4
         with:
           path: builder
           fetch-depth: 0
 
-      - name: Free Disk Space
-        run: |
-          echo "[+] Before cleanup:"
-          df -h /
-          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
-            /opt/hostedtoolcache/CodeQL /usr/local/.ghcup \
-            /usr/local/share/boost "$AGENT_TOOLSDIRECTORY" || true
-          sudo docker image prune --all --force || true
-          echo "[+] After cleanup:"
-          df -h /
-
-      - name: Clone Kernel Source
-        run: |
-          git clone --depth=50 --filter=blob:none \
-            --branch main \
-            https://github.com/adennnqt/DumpC2J-6.6.git \
-            kernel-source
-
-      - name: Parse Inputs
-        id: setup_vars
-        env:
-          INPUT_HZ: ${{ inputs.hz }}
-          INPUT_VARIANT: ${{ matrix.variant }}
-          INPUT_ROOT: ${{ matrix.root }}
-          INPUT_BYPASS: ${{ inputs.bypasscharging && 'on' || 'off' }}
-          INPUT_DROIDSPACES: ${{ inputs.droidspaces && 'on' || 'off' }}
-          INPUT_HTSR: "on"
-          INPUT_WIFI: "on"
-          INPUT_KGSL: "on"
-          INPUT_DATA: "on"
-          INPUT_DEBUG: ${{ inputs.debug && 'on' || 'off' }}
-          INPUT_KERNEL_NAME: ${{ inputs.kernel_name }}
-          INPUT_SPOOF_UNAME: "on"
-          INPUT_NOMOUNT: ${{ inputs.nomount && 'on' || 'off' }}
-        run: |
-          if [ "$INPUT_HZ" == "powersave" ]; then HZ_ID=100
-          elif [ "$INPUT_HZ" == "balance" ]; then HZ_ID=250
-          elif [ "$INPUT_HZ" == "performance" ]; then HZ_ID=500
-          elif [ "$INPUT_HZ" == "smooth" ]; then HZ_ID=300
-          elif [ "$INPUT_HZ" == "ultra-performance" ]; then HZ_ID=1000
-          fi
-          echo "HZ_ID=$HZ_ID" >> $GITHUB_ENV
-
-          ACTUAL_ROOT="$INPUT_ROOT"
-          if [ "$INPUT_VARIANT" == "stock" ]; then
-            ACTUAL_ROOT="none"
-          fi
-          echo "ACTUAL_ROOT=$ACTUAL_ROOT" >> $GITHUB_ENV
-
-          if [ "$INPUT_VARIANT" == "stock" ]; then
-            BUILD_NAME="${INPUT_VARIANT}-${INPUT_HZ}"
-          else
-            BUILD_NAME="${INPUT_VARIANT}-${ACTUAL_ROOT}-${INPUT_HZ}"
-          fi
-
-          [ "$INPUT_BYPASS" == "on" ] && BUILD_NAME="${BUILD_NAME}-bypasscharging"
-          [ "$INPUT_DROIDSPACES" == "on" ] && BUILD_NAME="${BUILD_NAME}-droidspaces"
-          [ "$INPUT_DEBUG" == "on" ] && BUILD_NAME="${BUILD_NAME}-debug"
-          [ "$INPUT_NOMOUNT" == "on" ] && BUILD_NAME="${BUILD_NAME}-nomount"
-
-          echo "BUILD_NAME=$BUILD_NAME" >> $GITHUB_ENV
-
-      - name: Create Swap
-        run: |
-          SWAPFILE="/mnt/build_swapfile"
-          while true; do
-            if sudo fallocate -l 10G $SWAPFILE || sudo dd if=/dev/zero of=$SWAPFILE bs=1M count=10240 status=progress; then
-              break
-            else
-              sleep 5
-            fi
-          done
-          sudo chmod 600 $SWAPFILE && sudo mkswap $SWAPFILE && sudo swapon $SWAPFILE
-
-      - name: Setup Build Environment
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            bc bison build-essential ccache curl flex git gnupg gperf \
-            libssl-dev libxml2 lzop squashfs-tools rsync zip zlib1g-dev \
-            python3 clang lld llvm jq
-
-      - name: Get Cache Week
-        id: cacheweek
-        if: inputs.clang_variant != 'neutron'
-        run: echo "week=$(date -u +%G-W%V)" >> "$GITHUB_OUTPUT"
-
-      - name: Cache Clang Toolchain
-        if: inputs.clang_variant != 'neutron'
-        uses: actions/cache@v4
+      - name: Build Kernel (shared pipeline)
+        uses: ./builder/.github/actions/build-kernel
         with:
-          path: ~/toolchains/${{ inputs.clang_variant }}-clang
-          key: clang-${{ inputs.clang_variant }}-${{ steps.cacheweek.outputs.week }}
-
-      - name: Setup Clang
-        run: |
-          bash builder/scripts/setup_clang.sh ${{ inputs.clang_variant }}
-
-      - name: Setup AnyKernel3
-        run: |
-          git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git anykernel
-          cp kernel-source/anykernel/anykernel.sh anykernel/anykernel.sh
-          cp -r kernel-source/anykernel/tools/* anykernel/tools/
-
-      - name: Scout Checkpoint
-        env:
-          ROOT: ${{ env.ACTUAL_ROOT }}
-          VARIANT: ${{ matrix.variant }}
-          RUN_MODE: ${{ inputs.run_mode }}
-        run: bash builder/scripts/scout.sh
-
-      - name: Setup ccache
-        env:
-          CLANG_VARIANT: ${{ inputs.clang_variant }}
-          LTO: ${{ inputs.lto }}
-          GH_TOKEN: ${{ github.token }}
-        run: bash builder/scripts/lib/ccache_setup.sh
-
-      - name: Cache LTO Linker Cache
-        if: inputs.lto == 'thin'
-        uses: actions/cache@v4
-        with:
-          path: /dev/shm/ldcache
-          key: ldcache-${{ inputs.clang_variant }}-${{ inputs.lto }}
-
-      - name: Build Kernel
-        env:
-          INPUT_HZ: ${{ inputs.hz }}
-          INPUT_VARIANT: ${{ matrix.variant }}
-          INPUT_ROOT: ${{ matrix.root }}
-          INPUT_LTO: ${{ inputs.lto }}
-          INPUT_HTSR: "on"
-          INPUT_WIFI: "on"
-          INPUT_KGSL: "on"
-          INPUT_DATA: "on"
-          INPUT_BYPASS: ${{ inputs.bypasscharging && 'on' || 'off' }}
-          INPUT_DROIDSPACES: ${{ inputs.droidspaces && 'on' || 'off' }}
-          INPUT_DEBUG: ${{ inputs.debug && 'on' || 'off' }}
-          INPUT_KERNEL_NAME: ${{ inputs.kernel_name }}
-          INPUT_SPOOF_UNAME: "on"
-          INPUT_VERSION_SPOOF: ${{ inputs.kernel_version_spoof }}
-          INPUT_NOMOUNT: ${{ inputs.nomount && 'on' || 'off' }}
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          bash builder/scripts/build.sh
+          variant: ${{ matrix.variant }}
+          root: ${{ matrix.root }}
+          hz: ${{ inputs.hz }}
+          clang_variant: ${{ inputs.clang_variant }}
+          lto: ${{ inputs.lto }}
+          kernel_name: ${{ inputs.kernel_name }}
+          bypasscharging: ${{ inputs.bypasscharging }}
+          droidspaces: ${{ inputs.droidspaces }}
+          debug: ${{ inputs.debug }}
+          nomount: ${{ inputs.nomount }}
+          kernel_version_spoof: ${{ inputs.kernel_version_spoof }}
 
       - name: Save ccache (local part)
         if: always()
         continue-on-error: true
-        run: bash builder/scripts/lib/ccache_save.sh
+        run: bash builder/scripts/ccache_save.sh
 
       - name: Upload ccache part
         if: always()
@@ -321,7 +178,6 @@ jobs:
           name: ccache-part-${{ matrix.variant }}-${{ matrix.root }}
           path: ${{ env.CCACHE_TAR_PATH }}
           retention-days: 1
-
 
       - name: Notify Telegram
         if: success() && !inputs.autopost_channel
