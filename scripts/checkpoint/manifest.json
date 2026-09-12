@@ -10,8 +10,10 @@
     ]
   },
   "resukisu_susfs": {
-    "good": "052ca27775cc9c8570e3b1ba3db7c29486d6020e",
-    "bad": []
+    "good": "f1dd81dc96d7f3f6691e6ac8b50fba9ae8a2f17c",
+    "bad": [
+      "052ca27775cc9c8570e3b1ba3db7c29486d6020e"
+    ]
   },
   "ksunext_root": {
     "good": "917df670d7259362d4537735a9b6d110d133c049",
