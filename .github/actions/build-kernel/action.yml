@@ -197,6 +197,7 @@ runs:
       env:
         ROOT: ${{ env.ACTUAL_ROOT }}
         VARIANT: ${{ inputs.variant }}
+        GH_TOKEN: ${{ github.token }}
       run: bash builder/scripts/scout.sh
 
     - name: Setup ccache
