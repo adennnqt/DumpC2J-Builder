@@ -8,7 +8,6 @@ MANIFEST="${BUILDER_DIR}/scripts/checkpoint/manifest.json"
 [ -f "$MANIFEST" ] || error "scout: manifest.json not found at ${MANIFEST}"
 
 RUN_MODE="${RUN_MODE:-Test}"
-CANDIDATE_CLAIMED="false"
 
 latest_sha_or_empty() {
     local label="$1" url="$2" jq_filter="$3"
@@ -59,10 +58,11 @@ ref_exists() {
 
 resolve_component() {
     local key="$1" prefix="$2" latest="$3" url_template="$4"
-    local good bad_list is_bad ref candidate
+    local good bad_list is_bad ref candidate manual
 
     good=$(jq -r ".${key}.good" "$MANIFEST")
     bad_list=$(jq -c ".${key}.bad" "$MANIFEST")
+    manual=$(jq -r ".${key}.manual // false" "$MANIFEST")
 
     if [ -n "$good" ] && [ "$good" != "null" ] && [ -n "$url_template" ]; then
         if ! ref_exists "$url_template" "$good"; then
@@ -75,9 +75,13 @@ resolve_component() {
         [ -n "$good" ] || error "scout: RUN_MODE=Release but no valid pin ${key} yet — run Test first."
         ref="$good"; candidate="false"
         log "${prefix}: Release mode — pinned ${ref:0:12}"
+    elif [ "$manual" = "true" ]; then
+        [ -n "$good" ] || error "scout: ${key} is manual-pinned but has no good pin."
+        ref="$good"; candidate="false"
+        log "${prefix}: manual-pinned ${ref:0:12} (bump deliberately, coordinates with kernel hooks)"
     elif [ -z "$latest" ]; then
         ref="$good"; candidate="false"
-        log "${prefix}: no candidate — using pinned ${good:-none}"
+        log "${prefix}: no latest resolvable — using pinned ${good:-none}"
     elif [ "$latest" = "$good" ]; then
         ref="$good"; candidate="false"
         log "${prefix}: up to date at ${good:0:12}"
@@ -87,36 +91,13 @@ resolve_component() {
             if [ -n "$good" ]; then
                 ref="$good"; candidate="false"
                 warn "${prefix}: latest ${latest:0:12} known-bad — falling back to pinned ${good:0:12}"
-            elif [ "$CANDIDATE_CLAIMED" = "true" ]; then
-                ref=""; candidate="false"
-                warn "${prefix}: known-bad, no pin yet, & this run's candidate slot is taken by another component — skip this component, no checkout"
-                echo "SKIP_${prefix}=true" >> "$GITHUB_ENV"
-                echo "${prefix}_REF=${ref}" >> "$GITHUB_ENV"
-                echo "CANDIDATE_${prefix}=${candidate}" >> "$GITHUB_ENV"
-                return 0
             else
                 ref="$latest"; candidate="true"
-                CANDIDATE_CLAIMED="true"
-                warn "${prefix}: latest ${latest:0:12} known-bad & no pin yet — retry as last-resort candidate"
+                warn "${prefix}: latest ${latest:0:12} known-bad & no pin yet — last-resort: testing it anyway"
             fi
         else
-            if [ "$CANDIDATE_CLAIMED" = "true" ]; then
-                if [ -n "$good" ]; then
-                    ref="$good"; candidate="false"
-                    log "${prefix}: new candidate ${latest:0:12} detected but deferred — another component is being tested this run, pinned ${good:0:12} for now"
-                else
-                    ref=""; candidate="false"
-                    warn "${prefix}: new candidate ${latest:0:12} detected but deferred & no pin exists yet — skipping this component this run"
-                    echo "SKIP_${prefix}=true" >> "$GITHUB_ENV"
-                    echo "${prefix}_REF=${ref}" >> "$GITHUB_ENV"
-                    echo "CANDIDATE_${prefix}=${candidate}" >> "$GITHUB_ENV"
-                    return 0
-                fi
-            else
-                ref="$latest"; candidate="true"
-                CANDIDATE_CLAIMED="true"
-                log "${prefix}: new candidate ${latest:0:12} (pinned: ${good:-none})"
-            fi
+            ref="$latest"; candidate="true"
+            log "${prefix}: tracking latest ${latest:0:12} (pinned: ${good:-none})"
         fi
     fi
 
@@ -126,11 +107,16 @@ resolve_component() {
 
 scout_track() {
   local key="$1" prefix="$2"
-  local label url filter latest
-  label=$(source_label "$key")
+  local label url filter latest manual
+  manual=$(jq -r ".${key}.manual // false" "$MANIFEST")
   url=$(source_url "$key")
-  filter=$(source_filter "$key")
-  latest=$(latest_sha_or_empty "$label" "$url" "$filter")
+  if [ "$manual" != "true" ]; then
+    label=$(source_label "$key")
+    filter=$(source_filter "$key")
+    latest=$(latest_sha_or_empty "$label" "$url" "$filter")
+  else
+    latest=""
+  fi
   resolve_component "$key" "$prefix" "$latest" "$url"
 }
 

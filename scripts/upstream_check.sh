@@ -36,8 +36,11 @@ for key in "${!DUMPC2J_SOURCES[@]}"; do
   fi
 
   if [ "$latest" != "$good" ]; then
-    echo "[+] $label: ${good:0:8} -> ${latest:0:8}"
-    UPDATES+=("${label}: ${good:0:8} -> ${latest:0:8}")
+    manual=$(jq -r ".${key}.manual // false" "$MANIFEST")
+    tag=""
+    [ "$manual" = "true" ] && tag=" (MANUAL: requires kernel-hook port before bump)"
+    echo "[+] $label: ${good:0:8} -> ${latest:0:8}${tag}"
+    UPDATES+=("${label}: ${good:0:8} -> ${latest:0:8}${tag}")
   else
     echo "[=] $label: up to date"
   fi
