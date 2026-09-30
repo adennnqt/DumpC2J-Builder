@@ -17,9 +17,9 @@ on:
         type: boolean
         default: false
       source_repo_url:
-        description: "Source repo URL (leave empty = adennnqt/DumpC2J-6.6)"
+        description: "Source repo URL (leave empty = adennnqt/DumpC2J-Mirror-6.6)"
         type: string
-        default: "https://github.com/adennnqt/DumpC2J-6.6"
+        default: "https://github.com/adennnqt/DumpC2J-Mirror-6.6"
       source_branch:
         description: "Branch on alternate source (leave empty = default)"
         type: string
@@ -50,7 +50,7 @@ jobs:
         if: ${{ inputs.force_adopt == true }}
         run: |
           SOURCE_URL="${{ inputs.source_repo_url }}"
-          [ -n "$SOURCE_URL" ] || SOURCE_URL="https://github.com/adennnqt/DumpC2J-6.6"
+          [ -n "$SOURCE_URL" ] || SOURCE_URL="https://github.com/adennnqt/DumpC2J-Mirror-6.6"
 
           echo "Adopting from ${SOURCE_URL} @ ${SOURCE_BRANCH}"
           git clone --branch "${SOURCE_BRANCH}" --progress "${SOURCE_URL}" konoha-fresh
@@ -113,7 +113,7 @@ jobs:
         if: ${{ inputs.force_adopt == false }}
         run: |
           SOURCE_URL="${{ inputs.source_repo_url }}"
-          [ -n "$SOURCE_URL" ] || SOURCE_URL="https://github.com/adennnqt/DumpC2J-6.6"
+          [ -n "$SOURCE_URL" ] || SOURCE_URL="https://github.com/adennnqt/DumpC2J-Mirror-6.6"
 
           git clone --branch "${MIRROR_BRANCH}" --progress \
             "https://${{ secrets.TARGET_OWNER }}:${{ secrets.SYNC_TOKEN }}@github.com/${{ secrets.TARGET_OWNER }}/${TARGET_REPO}.git" konoha-work

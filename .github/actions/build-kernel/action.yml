@@ -69,10 +69,12 @@ runs:
     - name: Clone Kernel Source
       shell: bash
       working-directory: ${{ github.workspace }}
+      env:
+        KERNEL_CLONE_TOKEN: ${{ secrets.KERNEL_CLONE_TOKEN }}
       run: |
         git clone --depth=50 --filter=blob:none \
           --branch main \
-          https://github.com/adennnqt/DumpC2J-6.6.git \
+          https://x-access-token:${KERNEL_CLONE_TOKEN}@github.com/adennnqt/DumpC2J-Mirror-6.6.git \
           kernel-source
 
     - name: Parse Inputs
