@@ -24,6 +24,12 @@ echo "PIN_PREFIX=${PIN_PREFIX:-}" >> "$GITHUB_ENV"
 
 echo "REPO_NAME=$REPO_NAME" >> "$GITHUB_ENV"
 
+THREAD_INFO_H="$KERNEL_DIR/arch/arm64/include/asm/thread_info.h"
+if [ -f "$THREAD_INFO_H" ] && ! grep -q "TIF_PROC_IN_KSU_EXECVE" "$THREAD_INFO_H"; then
+  echo "[+] Patching thread_info.h: adding TIF_PROC_IN_KSU_EXECVE define"
+  sed -i '/^#define TIF_SYSCALL_TRACE/a#define TIF_PROC_IN_KSU_EXECVE 29' "$THREAD_INFO_H"
+fi
+
 rm -rf "$KERNEL_DIR/drivers/kernelsu"
 
 if [ "$VARIANT" == "stock" ]; then
@@ -121,6 +127,9 @@ else
 fi
 
 if [ "$VARIANT" == "susfs" ]; then
+  echo "[+] Installing fixed ksu_susfs_fixup.sh..."
+  cp "$BUILDER_DIR/scripts/ksu_susfs_fixup.sh" "$KERNEL_DIR/ksu_susfs_fixup.sh"
+  chmod +x "$KERNEL_DIR/ksu_susfs_fixup.sh"
   echo "[+] Running SUSFS fixup..."
   bash "$KERNEL_DIR/ksu_susfs_fixup.sh" "$KERNEL_DIR/drivers/kernelsu" "$ROOT"
 fi
