@@ -14,15 +14,17 @@ OLD_MARKER_RES = (
     re.compile(r"^KSU_VERSION_FULL\s*:=\s*\$\(KSU_VERSION_FULL\)-"),
     re.compile(r"^KSU_VERSION_FULL\s*:=\s*\$\(shell echo.*sed -E.*//'\)\s+\S+$"),
     re.compile(r"^KSU_VERSION_FULL\s*:=\s*\$\(shell echo.*sed -E.*//'\)-[^@]+@"),
+    re.compile(r"^KSU_VERSION_TAG\s*:=\s*\$\(KSU_VERSION_TAG\)-"),
+    re.compile(r"^KSU_VERSION_TAG_FALLBACK\s*:=\s*\$\(KSU_VERSION_TAG_FALLBACK\)-"),
 )
 
 SED_PATTERN = r"s/-[0-9a-f]{7,40}(-dirty)?@.*\$\$//"
 
 
-def is_old_marker(line, new_marker):
-    """Check if a line matches any old marker pattern (excluding the new_marker)."""
+def is_old_marker(line, new_marker_full, new_marker_tag, new_marker_fallback):
+    """Check if a line matches any old marker pattern (excluding the new markers)."""
     stripped = line.strip()
-    if stripped == new_marker:
+    if stripped in (new_marker_full, new_marker_tag, new_marker_fallback):
         return False
     for old_re in OLD_MARKER_RES:
         if old_re.match(stripped):
@@ -34,26 +36,40 @@ def inject(path, name, owner="who"):
     with open(path) as f:
         lines = f.read().split("\n")
 
-    new_marker = f"KSU_VERSION_FULL := $(shell echo '$(KSU_VERSION_FULL)' | sed -E '{SED_PATTERN}')-{owner}@{name}"
+    new_marker_full = f"KSU_VERSION_FULL := $(shell echo '$(KSU_VERSION_FULL)' | sed -E '{SED_PATTERN}')-{owner}@{name}"
+    new_marker_tag = f"KSU_VERSION_TAG := $(shell echo '$(KSU_VERSION_TAG)' | sed -E '{SED_PATTERN}')-{owner}@{name}"
+    new_marker_fallback = f"KSU_VERSION_TAG_FALLBACK := $(shell echo '$(KSU_VERSION_TAG_FALLBACK)' | sed -E '{SED_PATTERN}')-{owner}@{name}"
 
-    # Check if new marker already exists
-    has_new_marker = any(l.strip() == new_marker for l in lines)
+    # Check if new markers already exist
+    has_new_full = any(l.strip() == new_marker_full for l in lines)
+    has_new_tag = any(l.strip() == new_marker_tag for l in lines)
+    has_new_fallback = any(l.strip() == new_marker_fallback for l in lines)
 
-    # Find all old marker line indices (excluding the new marker itself)
-    old_marker_indices = [i for i, l in enumerate(lines) if is_old_marker(l, new_marker)]
+    # Find all old marker line indices (excluding the new markers themselves)
+    old_marker_indices = [i for i, l in enumerate(lines) if is_old_marker(l, new_marker_full, new_marker_tag, new_marker_fallback)]
 
-    # If new marker exists and no old markers, skip
-    if has_new_marker and not old_marker_indices:
+    # If all applicable new markers exist and no old markers, skip
+    is_kbuild = os.path.basename(path) == "Kbuild"
+    full_applicable = not is_kbuild or any(ASSIGN_RE.match(l) for l in lines)
+    tag_applicable = is_kbuild and any(KSUNEXT_TAG_RE.match(l) for l in lines)
+    fallback_applicable = is_kbuild and any(KSUNEXT_FALLBACK_RE.match(l) for l in lines)
+
+    skip_full = not full_applicable or (has_new_full and not any(i in old_marker_indices for i, l in enumerate(lines) if ASSIGN_RE.match(l) and "$(KSU_VERSION_FULL)" not in l))
+    skip_tag = not tag_applicable or (has_new_tag and not any(i in old_marker_indices for i, l in enumerate(lines) if KSUNEXT_TAG_RE.match(l) and "$(KSU_VERSION_TAG)" not in l))
+    skip_fallback = not fallback_applicable or (has_new_fallback and not any(i in old_marker_indices for i, l in enumerate(lines) if KSUNEXT_FALLBACK_RE.match(l) and "$(KSU_VERSION_TAG_FALLBACK)" not in l))
+
+    if (not full_applicable or skip_full) and (not tag_applicable or skip_tag) and (not fallback_applicable or skip_fallback) and not old_marker_indices:
         print(f"[branding] {path}: '{owner}@{name}' already injected, skipping.")
         return True
 
-    is_kbuild = os.path.basename(path) == "Kbuild"
     count = 0
     i = 0
     out = []
 
-    # Track if we've injected the new marker
-    injected_new = False
+    # Track if we've injected each marker
+    injected_full = False
+    injected_tag = False
+    injected_fallback = False
 
     while i < len(lines):
         line = lines[i]
@@ -65,42 +81,53 @@ def inject(path, name, owner="who"):
 
         out.append(line)
 
-        # Inject new marker after the original KSU_VERSION_FULL assignment
-        if not injected_new:
+        # Inject KSU_VERSION_FULL marker
+        if not injected_full:
             if ASSIGN_RE.match(line) and "$(KSU_VERSION_FULL)" not in line:
                 while out[-1].rstrip().endswith("\\") and i + 1 < len(lines):
                     i += 1
                     out.append(lines[i])
                 indent = re.match(r"^\s*", line).group(0)
-                out.append(indent + new_marker)
+                out.append(indent + new_marker_full)
                 count += 1
-                injected_new = True
+                injected_full = True
 
-            elif is_kbuild and KSUNEXT_TAG_RE.match(line) and "$(KSU_VERSION_TAG)" not in line:
+        # Inject KSU_VERSION_TAG marker (Kbuild only)
+        if is_kbuild and not injected_tag:
+            if KSUNEXT_TAG_RE.match(line) and "$(KSU_VERSION_TAG)" not in line:
                 while out[-1].rstrip().endswith("\\") and i + 1 < len(lines):
                     i += 1
                     out.append(lines[i])
                 indent = re.match(r"^\s*", line).group(0)
-                marker = f"KSU_VERSION_TAG := $(KSU_VERSION_TAG)-{name}"
-                out.append(indent + marker)
+                out.append(indent + new_marker_tag)
                 count += 1
+                injected_tag = True
 
-            elif is_kbuild and KSUNEXT_FALLBACK_RE.match(line) and "$(KSU_VERSION_TAG_FALLBACK)" not in line:
+        # Inject KSU_VERSION_TAG_FALLBACK marker (Kbuild only)
+        if is_kbuild and not injected_fallback:
+            if KSUNEXT_FALLBACK_RE.match(line) and "$(KSU_VERSION_TAG_FALLBACK)" not in line:
                 while out[-1].rstrip().endswith("\\") and i + 1 < len(lines):
                     i += 1
                     out.append(lines[i])
                 indent = re.match(r"^\s*", line).group(0)
-                marker = f"KSU_VERSION_TAG_FALLBACK := $(KSU_VERSION_TAG_FALLBACK)-{name}"
-                out.append(indent + marker)
+                out.append(indent + new_marker_fallback)
                 count += 1
+                injected_fallback = True
 
         i += 1
 
     # If we were replacing old markers but didn't inject (e.g., no assignment found),
-    # append the new marker at the end
-    if old_marker_indices and not injected_new and count == 0:
-        out.append(new_marker)
-        count = 1
+    # append the missing markers at the end
+    if old_marker_indices and count == 0:
+        if full_applicable and not injected_full:
+            out.append(new_marker_full)
+            count += 1
+        if tag_applicable and not injected_tag:
+            out.append(new_marker_tag)
+            count += 1
+        if fallback_applicable and not injected_fallback:
+            out.append(new_marker_fallback)
+            count += 1
 
     if not count:
         return False
