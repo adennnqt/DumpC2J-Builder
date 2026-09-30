@@ -42,15 +42,15 @@ jobs:
         run: |
           echo "MIRROR_BRANCH=${{ inputs.android_version }}-${{ inputs.kernel_version }}" >> $GITHUB_ENV
           echo "TARGET_REPO=${{ secrets.TARGET_REPO_PREFIX }}${{ inputs.kernel_version }}" >> $GITHUB_ENV
+          SOURCE_BRANCH="${{ inputs.source_branch }}"
+          [ -n "$SOURCE_BRANCH" ] || SOURCE_BRANCH="main"
+          echo "SOURCE_BRANCH=${SOURCE_BRANCH}" >> $GITHUB_ENV
 
       - name: "Adopt live Konoha (full clone, adaptive chunked push)"
         if: ${{ inputs.force_adopt == true }}
         run: |
           SOURCE_URL="${{ inputs.source_repo_url }}"
           [ -n "$SOURCE_URL" ] || SOURCE_URL="https://github.com/onyx-oss/konoha-kernel-gki"
-
-          SOURCE_BRANCH="${{ inputs.source_branch }}"
-          [ -n "$SOURCE_BRANCH" ] || SOURCE_BRANCH="${{ inputs.android_version }}-${{ inputs.kernel_version }}"
 
           echo "Adopting from ${SOURCE_URL} @ ${SOURCE_BRANCH}"
           git clone --branch "${SOURCE_BRANCH}" --progress "${SOURCE_URL}" konoha-fresh
@@ -102,6 +102,7 @@ jobs:
           done
 
           git push --no-thin target "HEAD:refs/heads/${MIRROR_BRANCH}" --force
+          git push --no-thin target "HEAD:refs/heads/main" --force || true
 
           VERSION=$(grep '^VERSION = ' Makefile | awk '{print $3}')
           PATCHLEVEL=$(grep '^PATCHLEVEL = ' Makefile | awk '{print $3}')
@@ -111,12 +112,15 @@ jobs:
       - name: "Fast-forward sync from live Konoha"
         if: ${{ inputs.force_adopt == false }}
         run: |
+          SOURCE_URL="${{ inputs.source_repo_url }}"
+          [ -n "$SOURCE_URL" ] || SOURCE_URL="https://github.com/onyx-oss/konoha-kernel-gki"
+
           git clone --branch "${MIRROR_BRANCH}" --progress \
             "https://${{ secrets.TARGET_OWNER }}:${{ secrets.SYNC_TOKEN }}@github.com/${{ secrets.TARGET_OWNER }}/${TARGET_REPO}.git" konoha-work
           cd konoha-work
 
-          git remote add konoha-live "https://github.com/onyx-oss/konoha-kernel-gki"
-          git fetch konoha-live "${{ inputs.android_version }}-${{ inputs.kernel_version }}" --progress
+          git remote add konoha-live "${SOURCE_URL}"
+          git fetch konoha-live "${SOURCE_BRANCH}" --progress
 
           if ! git merge-base --is-ancestor HEAD FETCH_HEAD; then
             echo "::error::Diverged dari Konoha upstream. Pure mirror harus FF only. Re-run dengan force_adopt=true."
@@ -125,6 +129,7 @@ jobs:
 
           git merge --ff-only FETCH_HEAD
           git push origin "HEAD:refs/heads/${MIRROR_BRANCH}"
+          git push origin "HEAD:refs/heads/main" --force || true
 
           VERSION=$(grep '^VERSION = ' Makefile | awk '{print $3}')
           PATCHLEVEL=$(grep '^PATCHLEVEL = ' Makefile | awk '{print $3}')
