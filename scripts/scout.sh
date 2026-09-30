@@ -72,7 +72,10 @@ log_commits_since() {
                 ;;
             esac
             log "${prefix}: ${n} upstream commit(s) between ${base:0:12}..${head:0:12}:"
-            echo "$body" | jq -r '.commits[]?.commit.message // empty' 2>/dev/null | head -10 | sed 's/^/\t- /' || true
+            # Run jq in subshell to avoid script exit on parse errors (invalid UTF-8 in commit messages)
+            local commits
+            commits=$(echo "$body" | jq -r '.commits[]?.commit.message // empty' 2>/dev/null || true)
+            printf '%s\n' "$commits" | head -10 | sed 's/^/\t- /'
             [ "$n" -le 10 ] || log "${prefix}:   ... and $((n - 10)) more"
             ;;
     esac
