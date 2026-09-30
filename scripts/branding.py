@@ -16,10 +16,13 @@ def inject(path, name):
         lines = f.read().split("\n")
 
     # Check if already injected (idempotency)
-    ksu_marker = f"KSU_VERSION_FULL := $(KSU_VERSION_FULL)-{name}"
+    # New sed-based rewrite marker
+    ksu_new_marker = f"KSU_VERSION_FULL := $(shell echo '$(KSU_VERSION_FULL)' | sed -E 's/-[0-9a-f]{{7,40}}(-dirty)?@.*$$//') {name}"
+    # Old append marker (from previous runs)
+    ksu_old_marker = f"KSU_VERSION_FULL := $(KSU_VERSION_FULL)-{name}"
     ksunext_marker = f"KSU_VERSION_TAG := $(KSU_VERSION_TAG)-{name}"
     ksunext_fallback_marker = f"KSU_VERSION_TAG_FALLBACK := $(KSU_VERSION_TAG_FALLBACK)-{name}"
-    if any(l.strip() == ksu_marker or l.strip() == ksunext_marker or l.strip() == ksunext_fallback_marker for l in lines):
+    if any(l.strip() == ksu_new_marker or l.strip() == ksu_old_marker or l.strip() == ksunext_marker or l.strip() == ksunext_fallback_marker for l in lines):
         print(f"[branding] {path}: '{name}' already injected, skipping.")
         return True
 
@@ -37,7 +40,7 @@ def inject(path, name):
                 i += 1
                 out.append(lines[i])
             indent = re.match(r"^\s*", line).group(0)
-            marker = f"KSU_VERSION_FULL := $(KSU_VERSION_FULL)-{name}"
+            marker = f"KSU_VERSION_FULL := $(shell echo '$(KSU_VERSION_FULL)' | sed -E 's/-[0-9a-f]{{7,40}}(-dirty)?@.*$$//') {name}"
             out.append(indent + marker)
             count += 1
 
