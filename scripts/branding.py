@@ -36,9 +36,9 @@ def inject(path, name, owner="who"):
     with open(path) as f:
         lines = f.read().split("\n")
 
-    new_marker_full = f"KSU_VERSION_FULL := $(shell echo '$(KSU_VERSION_FULL)' | sed -E '{SED_PATTERN}')-{owner}@{name}"
-    new_marker_tag = f"KSU_VERSION_TAG := $(shell echo '$(KSU_VERSION_TAG)' | sed -E '{SED_PATTERN}')-{owner}@{name}"
-    new_marker_fallback = f"KSU_VERSION_TAG_FALLBACK := $(shell echo '$(KSU_VERSION_TAG_FALLBACK)' | sed -E '{SED_PATTERN}')-{owner}@{name}"
+    new_marker_full = f"KSU_VERSION_FULL := $$(shell v='$$(KSU_VERSION_FULL)'; [ -z \"$${{v}}\" ] && v='v0.0.1'; echo \"$${{v}}\" | sed -E '{SED_PATTERN}')-{owner}@{name}"
+    new_marker_tag = f"KSU_VERSION_TAG := $$(shell v='$$(KSU_VERSION_TAG)'; [ -z \"$${{v}}\" ] && v='v0.0.1'; echo \"$${{v}}\" | sed -E '{SED_PATTERN}')-{owner}@{name}"
+    new_marker_fallback = f"KSU_VERSION_TAG_FALLBACK := $$(shell v='$$(KSU_VERSION_TAG_FALLBACK)'; [ -z \"$${{v}}\" ] && v='v0.0.1'; echo \"$${{v}}\" | sed -E '{SED_PATTERN}')-{owner}@{name}"
 
     # Check if new markers already exist
     has_new_full = any(l.strip() == new_marker_full for l in lines)
