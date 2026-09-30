@@ -65,14 +65,14 @@ log_commits_since() {
             repo_base="${url_template%/commits/*}"
             compare_url="${repo_base}/compare/${base}...${head}"
             body=$(curl -sL --max-time 20 "${CURL_AUTH[@]}" "$compare_url" 2>/dev/null) || return 0
-            n=$(echo "$body" | jq -r '[.commits[]?.commit.message]|length' 2>/dev/null) || n=0
+            n=$(echo "$body" | jq -r '[.commits[]?.commit.message]|length' 2>/dev/null || echo 0)
             case "$n" in ''|0|null)
                 log "${prefix}: can't list commits ${base:0:12}..${head:0:12} (rate-limited?)"
                 return 0
                 ;;
             esac
             log "${prefix}: ${n} upstream commit(s) between ${base:0:12}..${head:0:12}:"
-            echo "$body" | jq -r '.commits[]?.commit.message' 2>/dev/null | head -10 | sed 's/^/\t- /'
+            echo "$body" | jq -r '.commits[]?.commit.message // empty' 2>/dev/null | head -10 | sed 's/^/\t- /' || true
             [ "$n" -le 10 ] || log "${prefix}:   ... and $((n - 10)) more"
             ;;
     esac
