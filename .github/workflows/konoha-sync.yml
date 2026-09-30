@@ -1,0 +1,132 @@
+name: "🌿 Konoha Sync (pure mirror)"
+run-name: "${{ inputs.force_adopt && format('🌊 Adopt fresh Konoha | {0}-{1}', inputs.android_version, inputs.kernel_version) || format('🌀 FF sync Konoha | {0}-{1}', inputs.android_version, inputs.kernel_version) }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      kernel_version:
+        description: "Kernel version"
+        type: string
+        default: "6.6"
+      android_version:
+        description: "Android version"
+        type: string
+        default: "android14"
+      force_adopt:
+        description: "First run / full re-adopt"
+        type: boolean
+        default: false
+      source_repo_url:
+        description: "Alternate source (leave empty = konoha)"
+        type: string
+        default: ""
+      source_branch:
+        description: "Branch on alternate source (leave empty = default)"
+        type: string
+        default: ""
+
+jobs:
+  konoha-sync:
+    name: "Sync ${{ inputs.android_version }}-${{ inputs.kernel_version }} (Konoha mirror)"
+    runs-on: ubuntu-24.04
+    steps:
+      - name: "Free up disk space"
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+            /usr/local/share/boost /opt/hostedtoolcache/CodeQL \
+            /usr/share/swift /usr/local/.ghcup
+          sudo apt-get clean
+          df -h
+
+      - name: "Resolve target repo/branch"
+        run: |
+          echo "MIRROR_BRANCH=${{ inputs.android_version }}-${{ inputs.kernel_version }}" >> $GITHUB_ENV
+          echo "TARGET_REPO=${{ secrets.TARGET_REPO_PREFIX }}${{ inputs.kernel_version }}" >> $GITHUB_ENV
+
+      - name: "Adopt live Konoha (full clone, adaptive chunked push)"
+        if: ${{ inputs.force_adopt == true }}
+        run: |
+          SOURCE_URL="${{ inputs.source_repo_url }}"
+          [ -n "$SOURCE_URL" ] || SOURCE_URL="https://github.com/onyx-oss/konoha-kernel-gki"
+
+          SOURCE_BRANCH="${{ inputs.source_branch }}"
+          [ -n "$SOURCE_BRANCH" ] || SOURCE_BRANCH="${{ inputs.android_version }}-${{ inputs.kernel_version }}"
+
+          echo "Adopting from ${SOURCE_URL} @ ${SOURCE_BRANCH}"
+          git clone --branch "${SOURCE_BRANCH}" --progress "${SOURCE_URL}" konoha-fresh
+          cd konoha-fresh
+
+          git config user.name "${{ secrets.TARGET_OWNER }}"
+          git config user.email "${{ secrets.TARGET_OWNER }}@users.noreply.github.com"
+          git config http.postBuffer 524288000
+          git config http.version HTTP/1.1
+
+          git remote add target \
+            "https://${{ secrets.TARGET_OWNER }}:${{ secrets.SYNC_TOKEN }}@github.com/${{ secrets.TARGET_OWNER }}/${TARGET_REPO}.git"
+
+          git rev-list --reverse HEAD > /tmp/commits.txt
+          TOTAL=$(wc -l < /tmp/commits.txt)
+          echo "Total commits to push: ${TOTAL}"
+
+          idx=0
+          step=100000
+          min_step=1
+          fails_at_min=0
+
+          while [ "$idx" -lt "$TOTAL" ]; do
+            target_idx=$(( idx + step ))
+            [ "$target_idx" -gt "$TOTAL" ] && target_idx=$TOTAL
+
+            commit_sha=$(awk -v n="$target_idx" 'NR==n{print; exit}' /tmp/commits.txt)
+            echo "Pushing checkpoint ${target_idx}/${TOTAL} (${commit_sha}), step=${step}..."
+
+            success=0
+            for attempt in 1 2 3; do
+              git push --no-thin target "${commit_sha}:refs/heads/${MIRROR_BRANCH}" --force 2>&1
+              [ $? -eq 0 ] && success=1 && break
+              echo "Attempt ${attempt} failed, retrying in 5s..."
+              sleep 5
+            done
+
+            if [ "$success" -eq 1 ]; then
+              idx=$target_idx
+              fails_at_min=0
+            elif [ "$step" -le "$min_step" ]; then
+              fails_at_min=$((fails_at_min + 1))
+              [ "$fails_at_min" -ge 3 ] && echo "::error::Push failed repeatedly at step=1 on ${commit_sha}." && exit 1
+            else
+              step=$(( step / 2 ))
+              [ "$step" -lt "$min_step" ] && step=$min_step
+              echo "Reducing step to ${step}, retrying from ${idx}..."
+            fi
+          done
+
+          git push --no-thin target "HEAD:refs/heads/${MIRROR_BRANCH}" --force
+
+          VERSION=$(grep '^VERSION = ' Makefile | awk '{print $3}')
+          PATCHLEVEL=$(grep '^PATCHLEVEL = ' Makefile | awk '{print $3}')
+          SUBLEVEL=$(grep '^SUBLEVEL = ' Makefile | awk '{print $3}')
+          echo "Adopted Konoha ${VERSION}.${PATCHLEVEL}.${SUBLEVEL} → ${TARGET_REPO}@${MIRROR_BRANCH} (${TOTAL} commits)"
+
+      - name: "Fast-forward sync from live Konoha"
+        if: ${{ inputs.force_adopt == false }}
+        run: |
+          git clone --branch "${MIRROR_BRANCH}" --progress \
+            "https://${{ secrets.TARGET_OWNER }}:${{ secrets.SYNC_TOKEN }}@github.com/${{ secrets.TARGET_OWNER }}/${TARGET_REPO}.git" konoha-work
+          cd konoha-work
+
+          git remote add konoha-live "https://github.com/onyx-oss/konoha-kernel-gki"
+          git fetch konoha-live "${{ inputs.android_version }}-${{ inputs.kernel_version }}" --progress
+
+          if ! git merge-base --is-ancestor HEAD FETCH_HEAD; then
+            echo "::error::Diverged dari Konoha upstream. Pure mirror harus FF only. Re-run dengan force_adopt=true."
+            exit 1
+          fi
+
+          git merge --ff-only FETCH_HEAD
+          git push origin "HEAD:refs/heads/${MIRROR_BRANCH}"
+
+          VERSION=$(grep '^VERSION = ' Makefile | awk '{print $3}')
+          PATCHLEVEL=$(grep '^PATCHLEVEL = ' Makefile | awk '{print $3}')
+          SUBLEVEL=$(grep '^SUBLEVEL = ' Makefile | awk '{print $3}')
+          echo "Fast-forwarded → Konoha ${VERSION}.${PATCHLEVEL}.${SUBLEVEL}"
