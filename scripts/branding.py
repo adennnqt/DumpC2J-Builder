@@ -5,28 +5,60 @@ import re
 
 CANDIDATES = ("Kbuild", "Makefile")
 ASSIGN_RE = re.compile(r"^\s*KSU_VERSION_FULL\s*[:?]?=")
+# Match both direct assignment (KSU_VERSION_TAG := ...) and eval form ($(eval KSU_VERSION_TAG=...))
+KSUNEXT_TAG_RE = re.compile(r"^\s*(?:KSU_VERSION_TAG\s*[:?]?=|\$\(eval\s+KSU_VERSION_TAG\s*=)")
+# Match fallback assignment in else branch
+KSUNEXT_FALLBACK_RE = re.compile(r"^\s*KSU_VERSION_TAG_FALLBACK\s*[:?]?=")
 
 
 def inject(path, name):
-    marker = f"KSU_VERSION_FULL := $(KSU_VERSION_FULL)-{name}"
     with open(path) as f:
         lines = f.read().split("\n")
 
-    if any(l.strip() == marker for l in lines):
+    # Check if already injected (idempotency)
+    ksu_marker = f"KSU_VERSION_FULL := $(KSU_VERSION_FULL)-{name}"
+    ksunext_marker = f"KSU_VERSION_TAG := $(KSU_VERSION_TAG)-{name}"
+    ksunext_fallback_marker = f"KSU_VERSION_TAG_FALLBACK := $(KSU_VERSION_TAG_FALLBACK)-{name}"
+    if any(l.strip() == ksu_marker or l.strip() == ksunext_marker or l.strip() == ksunext_fallback_marker for l in lines):
         print(f"[branding] {path}: '{name}' already injected, skipping.")
         return True
 
-    out, count, i = [], 0, 0
+    is_kbuild = os.path.basename(path) == "Kbuild"
+    count = 0
+    i = 0
+    out = []
+
     while i < len(lines):
         line = lines[i]
         out.append(line)
+
         if ASSIGN_RE.match(line) and "$(KSU_VERSION_FULL)" not in line:
             while out[-1].rstrip().endswith("\\") and i + 1 < len(lines):
                 i += 1
                 out.append(lines[i])
             indent = re.match(r"^\s*", line).group(0)
+            marker = f"KSU_VERSION_FULL := $(KSU_VERSION_FULL)-{name}"
             out.append(indent + marker)
             count += 1
+
+        elif is_kbuild and KSUNEXT_TAG_RE.match(line) and "$(KSU_VERSION_TAG)" not in line:
+            while out[-1].rstrip().endswith("\\") and i + 1 < len(lines):
+                i += 1
+                out.append(lines[i])
+            indent = re.match(r"^\s*", line).group(0)
+            marker = f"KSU_VERSION_TAG := $(KSU_VERSION_TAG)-{name}"
+            out.append(indent + marker)
+            count += 1
+
+        elif is_kbuild and KSUNEXT_FALLBACK_RE.match(line) and "$(KSU_VERSION_TAG_FALLBACK)" not in line:
+            while out[-1].rstrip().endswith("\\") and i + 1 < len(lines):
+                i += 1
+                out.append(lines[i])
+            indent = re.match(r"^\s*", line).group(0)
+            marker = f"KSU_VERSION_TAG_FALLBACK := $(KSU_VERSION_TAG_FALLBACK)-{name}"
+            out.append(indent + marker)
+            count += 1
+
         i += 1
 
     if not count:
@@ -34,7 +66,7 @@ def inject(path, name):
 
     with open(path, "w") as f:
         f.write("\n".join(out))
-    print(f"[branding] {path}: injected '{name}' after {count} KSU_VERSION_FULL assignment(s)")
+    print(f"[branding] {path}: injected '{name}' after {count} assignment(s)")
     return True
 
 
@@ -61,7 +93,7 @@ def main():
     for p in files:
         with open(p) as f:
             for n, l in enumerate(f, 1):
-                if re.search(r"VERSION|@\$\(|-dirty|describe", l):
+                if re.search(r"VERSION|@\$\(|-dirty|describe|KSU_VERSION_TAG", l):
                     print(f"  {p}:{n}: {l.rstrip()}")
     sys.exit(0)
 
