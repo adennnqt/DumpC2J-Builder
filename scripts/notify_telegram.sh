@@ -8,15 +8,15 @@ KERNEL_DIR="${GITHUB_WORKSPACE}/kernel-source"
 BUILDER_DIR="${GITHUB_WORKSPACE}/builder"
 ZIP_PATH="${KERNEL_DIR}/DumpC2J-Release/${ZIP_NAME}"
 
-esc() { printf '%s' "$1" | sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g'; }
+esc() { printf '%s' "$1" | sed -e 's/&/\&/g' -e 's/</\</g' -e 's/>/\>/g'; }
 
 get_raw_log() {
   local repo_dir="$1" tag_name="$2"
   (cd "$repo_dir" && git fetch origin "+refs/tags/${tag_name}:refs/tags/${tag_name}" 2>/dev/null || true)
   if (cd "$repo_dir" && git rev-parse "$tag_name" >/dev/null 2>&1); then
-    (cd "$repo_dir" && git log "${tag_name}..HEAD" --no-merges --pretty=format:"%B%x1e" || true)
+    (cd "$repo_dir" && git log "${tag_name}..HEAD" --no-merges --pretty=format:"%B\x1e" || true)
   else
-    (cd "$repo_dir" && git log -10 --no-merges --pretty=format:"%B%x1e" || true)
+    (cd "$repo_dir" && git log -10 --no-merges --pretty=format:"%B\x1e" || true)
   fi
 }
 
@@ -163,15 +163,8 @@ SEND_DETAIL=$(curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sen
   -d reply_to_message_id="${MSG_ID}" \
   --data-urlencode text="$DETAIL")
 
-update_tag() {
-  local repo_dir="$1" tag_name="$2"
-  (cd "$repo_dir" && git tag -f "$tag_name" && git push origin "$tag_name" --force 2>/dev/null) || warn "Failed to push tag $tag_name in $repo_dir"
-}
-
 if echo "$SEND_DETAIL" | grep -q '"ok":true'; then
   log "Telegram notification (file + detail) sent."
-  update_tag "$KERNEL_DIR" "dumpc2j-last-notified"
-  update_tag "$BUILDER_DIR" "dumpc2j-builder-last-notified"
 else
   warn "File sent, but detail message failed. Trying plain text fallback..."
   echo "$SEND_DETAIL"
@@ -179,6 +172,4 @@ else
     -d chat_id="${TELEGRAM_CHAT_ID}" \
     -d reply_to_message_id="${MSG_ID}" \
     --data-urlencode text="$DETAIL" > /dev/null
-  update_tag "$KERNEL_DIR" "dumpc2j-last-notified"
-  update_tag "$BUILDER_DIR" "dumpc2j-builder-last-notified"
 fi
