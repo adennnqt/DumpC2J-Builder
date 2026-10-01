@@ -16,6 +16,14 @@ OLD_MARKER_RES = (
     re.compile(r"^KSU_VERSION_FULL\s*:=\s*\$\(shell echo.*sed -E.*//'\)-[^@]+@"),
     re.compile(r"^KSU_VERSION_TAG\s*:=\s*\$\(KSU_VERSION_TAG\)-"),
     re.compile(r"^KSU_VERSION_TAG_FALLBACK\s*:=\s*\$\(KSU_VERSION_TAG_FALLBACK\)-"),
+    # Shell-command format (v1 branding.py output)
+    re.compile(r"^KSU_VERSION_FULL\s*:=\s*\$\(shell v='\$\(KSU_VERSION_FULL\)';"),
+    re.compile(r"^KSU_VERSION_TAG\s*:=\s*\$\(shell v='\$\(KSU_VERSION_TAG\)';"),
+    re.compile(r"^KSU_VERSION_TAG_FALLBACK\s*:=\s*\$\(shell v='\$\(KSU_VERSION_TAG_FALLBACK\)';"),
+    # New static format markers
+    re.compile(r"^KSU_VERSION_FULL\s*:=\s*v?\d+\.\d+\.\d+(?:-rc\d+)?-[^@]+@"),
+    re.compile(r"^KSU_VERSION_TAG\s*:=\s*v?\d+\.\d+\.\d+(?:-rc\d+)?-[^@]+@"),
+    re.compile(r"^KSU_VERSION_TAG_FALLBACK\s*:=\s*v?\d+\.\d+\.\d+(?:-rc\d+)?-[^@]+@"),
 )
 
 SED_PATTERN = r"s/-[0-9a-f]{7,40}(-dirty)?@.*\$\$//"
@@ -55,10 +63,13 @@ def inject(path, name, owner="who", git_version="v0.0.1"):
     is_kbuild = os.path.basename(path) == "Kbuild"
 
     if is_kbuild:
-        new_marker_full = f"KSU_VERSION_FULL := $(shell v='$(KSU_VERSION_FULL)'; [ -z \"$${{v}}\" ] && v='v0.0.1'; echo \"$${{v}}\" | sed -E '{SED_PATTERN}')-{owner}@{name}"
-        new_marker_tag = f"KSU_VERSION_TAG := $(shell v='$(KSU_VERSION_TAG)'; [ -n \"$$v\" ] && [ \"$$v\" != 'v0.0.1' ] && echo \"$$(echo \"$$v\" | sed -E '{SED_PATTERN}') {name}\" || echo \"{name}\")"
-        new_marker_fallback = f"KSU_VERSION_TAG_FALLBACK := $(shell v='$(KSU_VERSION_TAG_FALLBACK)'; [ -n \"$$v\" ] && [ \"$$v\" != 'v0.0.1' ] && echo \"$$(echo \"$$v\" | sed -E '{SED_PATTERN}') {name}\" || echo \"{name}\")"
+        # KernelSU-Next: inject STATIC version (avoid shell command quoting issues)
+        # Format: vX.Y.Z-who@DumpC2J (matches Makefile style, parseable by KSU build scripts)
+        new_marker_full = f"KSU_VERSION_FULL := {git_version}-{owner}@{name}"
+        new_marker_tag = f"KSU_VERSION_TAG := {git_version}-{owner}@{name}"
+        new_marker_fallback = f"KSU_VERSION_TAG_FALLBACK := {git_version}-{owner}@{name}"
     else:
+        # SukiSU/ReSukiSU (Makefile): static assignment
         new_marker_full = f"KSU_VERSION_FULL := {git_version}-{owner}@{name}"
         new_marker_tag = f"KSU_VERSION_TAG := {git_version}-{owner}@{name}"
         new_marker_fallback = f"KSU_VERSION_TAG_FALLBACK := {git_version}-{owner}@{name}"
