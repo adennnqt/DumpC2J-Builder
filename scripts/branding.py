@@ -36,9 +36,19 @@ def inject(path, name, owner="who"):
     with open(path) as f:
         lines = f.read().split("\n")
 
-    new_marker_full = f"KSU_VERSION_FULL := $$(shell v='$$(KSU_VERSION_FULL)'; [ -z \"$${{v}}\" ] && v='v0.0.1'; echo \"$${{v}}\" | sed -E '{SED_PATTERN}')-{owner}@{name}"
-    new_marker_tag = f"KSU_VERSION_TAG := $$(shell v='$$(KSU_VERSION_TAG)'; [ -z \"$${{v}}\" ] && v='v0.0.1'; echo \"$${{v}}\" | sed -E '{SED_PATTERN}')-{owner}@{name}"
-    new_marker_fallback = f"KSU_VERSION_TAG_FALLBACK := $$(shell v='$$(KSU_VERSION_TAG_FALLBACK)'; [ -z \"$${{v}}\" ] && v='v0.0.1'; echo \"$${{v}}\" | sed -E '{SED_PATTERN}')-{owner}@{name}"
+    is_kbuild = os.path.basename(path) == "Kbuild"
+
+    if is_kbuild:
+        # KernelSU-Next: if tag exists (non-empty, not fallback) → "v0.10.0 DumpC2J"
+        # If empty or fallback (v0.0.1) → "DumpC2J"
+        new_marker_full = f"KSU_VERSION_FULL := $(shell v='$(KSU_VERSION_FULL)'; [ -z \"$${{v}}\" ] && v='v0.0.1'; echo \"$${{v}}\" | sed -E '{SED_PATTERN}')-{owner}@{name}"
+        new_marker_tag = f"KSU_VERSION_TAG := $(shell v='$(KSU_VERSION_TAG)'; [ -n \"$$v\" ] && [ \"$$v\" != 'v0.0.1' ] && echo \"$$(echo \"$$v\" | sed -E '{SED_PATTERN}') {name}\" || echo \"{name}\")"
+        new_marker_fallback = f"KSU_VERSION_TAG_FALLBACK := $(shell v='$(KSU_VERSION_TAG_FALLBACK)'; [ -n \"$$v\" ] && [ \"$$v\" != 'v0.0.1' ] && echo \"$$(echo \"$$v\" | sed -E '{SED_PATTERN}') {name}\" || echo \"{name}\")"
+    else:
+        # SukiSU/ReSukiSU (Makefile): use $$v for shell variable to avoid make expansion
+        new_marker_full = f"KSU_VERSION_FULL := $(shell v='$(KSU_VERSION_FULL)'; [ -z \"$$v\" ] && v='v0.0.1'; echo \"$$v\" | sed -E '{SED_PATTERN}')-{owner}@{name}"
+        new_marker_tag = f"KSU_VERSION_TAG := $(shell v='$(KSU_VERSION_TAG)'; [ -z \"$$v\" ] && v='v0.0.1'; echo \"$$v\" | sed -E '{SED_PATTERN}')-{owner}@{name}"
+        new_marker_fallback = f"KSU_VERSION_TAG_FALLBACK := $(shell v='$(KSU_VERSION_TAG_FALLBACK)'; [ -z \"$$v\" ] && v='v0.0.1'; echo \"$$v\" | sed -E '{SED_PATTERN}')-{owner}@{name}"
 
     # Check if new markers already exist
     has_new_full = any(l.strip() == new_marker_full for l in lines)
