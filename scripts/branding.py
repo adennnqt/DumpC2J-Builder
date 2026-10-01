@@ -2,6 +2,7 @@
 import sys
 import os
 import re
+import subprocess
 
 CANDIDATES = ("Kbuild", "Makefile")
 ASSIGN_RE = re.compile(r"^\s*KSU_VERSION_FULL\s*[:?]?=")
@@ -9,7 +10,6 @@ KSUNEXT_TAG_RE = re.compile(r"^\s*(?:KSU_VERSION_TAG\s*[:?]?=|\$\(eval\s+KSU_VER
 KSUNEXT_FALLBACK_RE = re.compile(r"^\s*KSU_VERSION_TAG_FALLBACK\s*[:?]?=")
 
 # Old markers to recognize and replace (idempotency + migration)
-# These match loosely to handle variations in escaping
 OLD_MARKER_RES = (
     re.compile(r"^KSU_VERSION_FULL\s*:=\s*\$\(KSU_VERSION_FULL\)-"),
     re.compile(r"^KSU_VERSION_FULL\s*:=\s*\$\(shell echo.*sed -E.*//'\)\s+\S+$"),
@@ -19,6 +19,7 @@ OLD_MARKER_RES = (
 )
 
 SED_PATTERN = r"s/-[0-9a-f]{7,40}(-dirty)?@.*\$\$//"
+VERSION_RE = re.compile(r"^(v?\d+\.\d+\.\d+(?:-rc\d+)?)")
 
 
 def is_old_marker(line, new_marker_full, new_marker_tag, new_marker_fallback):
@@ -32,23 +33,35 @@ def is_old_marker(line, new_marker_full, new_marker_tag, new_marker_fallback):
     return False
 
 
-def inject(path, name, owner="who"):
+def get_git_version(repo_dir):
+    """Extract semantic version from git tags at injection time (CI)."""
+    try:
+        out = subprocess.check_output(
+            ["git", "describe", "--tags", "--always", "--dirty"],
+            cwd=repo_dir, stderr=subprocess.DEVNULL, text=True
+        ).strip()
+        m = VERSION_RE.search(out)
+        if m:
+            return m.group(1)
+    except Exception:
+        pass
+    return "v0.0.1"
+
+
+def inject(path, name, owner="who", git_version="v0.0.1"):
     with open(path) as f:
         lines = f.read().split("\n")
 
     is_kbuild = os.path.basename(path) == "Kbuild"
 
     if is_kbuild:
-        # KernelSU-Next: if tag exists (non-empty, not fallback) → "v0.10.0 DumpC2J"
-        # If empty or fallback (v0.0.1) → "DumpC2J"
         new_marker_full = f"KSU_VERSION_FULL := $(shell v='$(KSU_VERSION_FULL)'; [ -z \"$${{v}}\" ] && v='v0.0.1'; echo \"$${{v}}\" | sed -E '{SED_PATTERN}')-{owner}@{name}"
         new_marker_tag = f"KSU_VERSION_TAG := $(shell v='$(KSU_VERSION_TAG)'; [ -n \"$$v\" ] && [ \"$$v\" != 'v0.0.1' ] && echo \"$$(echo \"$$v\" | sed -E '{SED_PATTERN}') {name}\" || echo \"{name}\")"
         new_marker_fallback = f"KSU_VERSION_TAG_FALLBACK := $(shell v='$(KSU_VERSION_TAG_FALLBACK)'; [ -n \"$$v\" ] && [ \"$$v\" != 'v0.0.1' ] && echo \"$$(echo \"$$v\" | sed -E '{SED_PATTERN}') {name}\" || echo \"{name}\")"
     else:
-        # SukiSU/ReSukiSU (Makefile): use $$v for shell variable to avoid make expansion
-        new_marker_full = f"KSU_VERSION_FULL := $(shell v='$(KSU_VERSION_FULL)'; [ -z \"$$v\" ] && v='v0.0.1'; echo \"$$v\" | sed -E '{SED_PATTERN}')-{owner}@{name}"
-        new_marker_tag = f"KSU_VERSION_TAG := $(shell v='$(KSU_VERSION_TAG)'; [ -z \"$$v\" ] && v='v0.0.1'; echo \"$$v\" | sed -E '{SED_PATTERN}')-{owner}@{name}"
-        new_marker_fallback = f"KSU_VERSION_TAG_FALLBACK := $(shell v='$(KSU_VERSION_TAG_FALLBACK)'; [ -z \"$$v\" ] && v='v0.0.1'; echo \"$$v\" | sed -E '{SED_PATTERN}')-{owner}@{name}"
+        new_marker_full = f"KSU_VERSION_FULL := {git_version}-{owner}@{name}"
+        new_marker_tag = f"KSU_VERSION_TAG := {git_version}-{owner}@{name}"
+        new_marker_fallback = f"KSU_VERSION_TAG_FALLBACK := {git_version}-{owner}@{name}"
 
     # Check if new markers already exist
     has_new_full = any(l.strip() == new_marker_full for l in lines)
@@ -159,8 +172,10 @@ def main():
     owner = sys.argv[3] if len(sys.argv) == 4 else "who"
 
     if os.path.isdir(target):
+        repo_dir = target
         files = [os.path.join(target, c) for c in CANDIDATES]
     else:
+        repo_dir = os.path.dirname(target)
         files = [target]
     files = [p for p in files if os.path.isfile(p)]
 
@@ -168,7 +183,10 @@ def main():
         print(f"[branding] no Kbuild/Makefile found in {target}, skipping.")
         sys.exit(0)
 
-    if any(inject(p, name, owner) for p in files):
+    git_version = get_git_version(repo_dir)
+
+    results = [inject(p, name, owner, git_version) for p in files]
+    if any(results):
         sys.exit(0)
 
     print("[branding] KSU_VERSION_FULL not assigned in any candidate file, skipping. Version-related lines:")
